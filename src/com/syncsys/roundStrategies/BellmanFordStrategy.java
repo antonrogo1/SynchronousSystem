@@ -56,7 +56,7 @@ public class BellmanFordStrategy implements RoundStrategy {
 			message.setSenderID(ID);
 			message.setDistance(dist);
 			
-			neighbor.addMessage((RoundMessage)message);
+			neighbor.addMessage(message);
 		}
     }
 
