@@ -17,7 +17,7 @@ public interface RoundStrategy {
 	 * 		from the channels.
 	 */
 
-	void generateMessages();
-	void processMessages();
-	void execute();
+	void generateMessages() throws InterruptedException;
+	void processMessages() throws InterruptedException;
+	void execute() throws InterruptedException;
 }

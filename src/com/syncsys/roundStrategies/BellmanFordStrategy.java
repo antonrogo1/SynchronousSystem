@@ -61,10 +61,11 @@ public class BellmanFordStrategy implements RoundStrategy {
     }
 
 	@Override
-    public void processMessages() {
+    public void processMessages() throws InterruptedException {
 		boolean hasDistanceChanged = false;
 		
-		for (RoundMessage roundMessage : process.getMessages()) {
+		for (int i=0; i<process.getMessages().size(); i++) {
+			RoundMessage roundMessage = process.getMessages().take();
 			BellmanFordMessage message = (BellmanFordMessage) roundMessage;
 			
 			int edgeWeight = process.getWeights().get(message.getSenderID());
@@ -80,9 +81,11 @@ public class BellmanFordStrategy implements RoundStrategy {
     }
 
 	@Override
-    public void execute() {
+    public void execute() throws InterruptedException {
 		generateMessages();
 		processMessages();
+		
 		System.out.println("id: " + process.getID() + ", dist: " + dist);
+		//System.out.println("Messages: " + process.getMessages().toString());
     }
 }

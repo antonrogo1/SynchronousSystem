@@ -56,7 +56,12 @@ public class ProcessNode implements Runnable
 
         //System.out.println("Running Thread : " + this.toString());
 
-        roundStrategy.execute();
+        try {
+	        roundStrategy.execute();
+        } catch (InterruptedException e) {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+        }
         
         //System.out.println("Finished Thread : " + this.toString());
         this.isRoundCompleted = true;
