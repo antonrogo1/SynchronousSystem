@@ -11,24 +11,24 @@ import java.util.*;
  */
 public class ProcessController
 {
-    private Map<Integer,Process> processes;
+    private Map<Integer, ProcessNode> processes;
 
     public ProcessController()
     {
-        processes = new LinkedHashMap<Integer,Process>(); //We want to quickly get to the process by using its id.
+        processes = new LinkedHashMap<Integer, ProcessNode>(); //We want to quickly get to the process by using its id.
     }
 
     public void runSingleRound()
     {
 
-        for(Process process : processes.values())
+        for(ProcessNode processNode : processes.values())
         {
-            process.resetRoundToStart();
+            processNode.resetRoundToStart();
         }
 
-        for(Process process : processes.values())
+        for(ProcessNode processNode : processes.values())
         {
-            Thread thread = new Thread(process);
+            Thread thread = new Thread(processNode);
             thread.start();
         }
 
@@ -61,32 +61,37 @@ public class ProcessController
 
 
             //Used to prerve order of ids - will be used when reading connectivity matrix
-            ArrayList<Process> orderedProcesses = new ArrayList<Process>();
+            ArrayList<ProcessNode> orderedProcesses = new ArrayList<ProcessNode>();
 
             //Reading second line - getting ids of processes and storing them to the HashMap
             line = bufferedReader.readLine();
             for(String stringId : line.split(","))
             {
 
-                Process process = new Process(Integer.parseInt(stringId));
-                this.processes.put(Integer.parseInt(stringId), process);
-                orderedProcesses.add(process);
+                ProcessNode processNode = new ProcessNode(Integer.parseInt(stringId));
+                this.processes.put(Integer.parseInt(stringId), processNode);
+                orderedProcesses.add(processNode);
             }
 
 
             /*
             * Reading connectivity matrix depending on matrix size, and adding neighbors to the thread
-            * Each line is the current process we establishing links for, each column is the the other processes in relation to current process.
+            * Each line is the current process we establishing links for, each column is the the other 
+            * processes in relation to current process.
             * */
-            for(Process process : this.processes.values())
+            for(ProcessNode processNode : this.processes.values())
             {
                 line = bufferedReader.readLine();
 
                 String[] connectionWeights = line.split(",");
                 for(int i = 0; i< connectionWeights.length; i++)
                 {
-                    if( Integer.parseInt(connectionWeights[i]) != -1)
-                        process.addNeighbor(orderedProcesses.get(i).getId(), Integer.parseInt(connectionWeights[i]));
+                    if( Integer.parseInt(connectionWeights[i]) != -1) {
+                        processNode.addNeighbor(
+                        		orderedProcesses.get(i).getID(), 
+                        		Integer.parseInt(connectionWeights[i]),
+                        		orderedProcesses.get(i));
+                    }
                 }
 
             }
@@ -99,14 +104,14 @@ public class ProcessController
     }
 
 
-    //fucntion to check if round complete
+    //Function to check if round complete
     private boolean isRoundComplete()
     {
         boolean isRoundComplete = true;
 
-        for(Process process : processes.values())
+        for(ProcessNode processNode : processes.values())
         {
-            if (process.isRoundCompleted() ==false)
+            if (processNode.isRoundCompleted() ==false)
                 return false;
 
         }
