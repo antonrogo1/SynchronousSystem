@@ -82,8 +82,8 @@ public class BellmanFordStrategy implements RoundStrategy {
 
 	@Override
     public void execute() throws InterruptedException {
-		processMessages();
 		generateMessages();
+		processMessages();
 		
 		System.out.println("id: " + process.getID() + ", dist: " + dist);
 		//System.out.println("Messages: " + process.getMessages().toString());
