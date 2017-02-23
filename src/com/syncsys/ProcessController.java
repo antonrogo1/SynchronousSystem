@@ -35,7 +35,6 @@ public class ProcessController
         while(this.isRoundComplete() ==false)
         {
             try {
-                System.out.println("Checking if round complete");
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();

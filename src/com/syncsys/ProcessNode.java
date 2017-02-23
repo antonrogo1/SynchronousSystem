@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
@@ -18,7 +19,7 @@ import com.syncsys.roundStrategies.RoundStrategy;
 public class ProcessNode implements Runnable
 {
     private int id;                                 //Id of process
-    private boolean isRoundCompleted;				//indicates to the parent that Thread finished its round
+    private volatile boolean isRoundCompleted;				//indicates to the parent that Thread finished its round
     private Map<Integer, Integer> weights;   	 	//Map of tuples: (id Of Neighbor process, weight)
     private Map<Integer, ProcessNode> neighbors;    //Map of tuples: (id Of Neighbor process, neighbor)
     private BlockingQueue<RoundMessage> messages;   //Messages send to this node
@@ -28,8 +29,8 @@ public class ProcessNode implements Runnable
     {
         this.id = id;
         isRoundCompleted = false;
-        weights = new HashMap<Integer, Integer>();
-        setNeighbors(new HashMap<Integer, ProcessNode>());
+        weights = new ConcurrentHashMap<Integer, Integer>();
+        neighbors = new ConcurrentHashMap<Integer, ProcessNode>();
         
         messages = new LinkedBlockingQueue<RoundMessage>();
         
@@ -41,12 +42,6 @@ public class ProcessNode implements Runnable
     {
         this.weights.put(id, weight);
         this.neighbors.put(id, neighbor);
-    }
-
-    public void closeMaps() {
-    	//make maps unmodifiable to ensure read-only required for concurrency
-        weights = Collections.unmodifiableMap(weights);
-        neighbors = Collections.unmodifiableMap(neighbors);
     }
 
     //Single Round (also see function below)
