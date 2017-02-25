@@ -22,6 +22,19 @@ public class Main {
         processController.runSingleRound();
         processController.runSingleRound();
         processController.runSingleRound();
+        processController.runSingleRound();
+        processController.runSingleRound();
+        processController.runSingleRound();
+        processController.runSingleRound();
+        processController.runSingleRound();
+        processController.runSingleRound();
+        processController.runSingleRound();
+        processController.runSingleRound();
+        processController.runSingleRound();
+        processController.runSingleRound();
+        processController.runSingleRound();
+        processController.runSingleRound();
+        processController.runSingleRound();
 
     }
 }

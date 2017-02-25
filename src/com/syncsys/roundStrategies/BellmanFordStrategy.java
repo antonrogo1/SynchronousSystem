@@ -47,6 +47,7 @@ public class BellmanFordStrategy implements RoundStrategy {
 	public BellmanFordStrategy(ProcessNode process) {
 		this.ID = process.getID();
 		this.dist = Integer.MAX_VALUE;
+		this.marked = false;
 		this.process = process;
 		this.parent = null;
 		this.childIDs = new LinkedList<Integer>();
@@ -87,8 +88,10 @@ public class BellmanFordStrategy implements RoundStrategy {
 			message.processUsing(this);
 		}
 		
-		marked = null != parent && allChildrenMarked();
-		process.setTerminating(parent.isTerminating());
+		if (null != parent) {
+			marked = allChildrenMarked();
+			process.setTerminating(parent.isTerminating());
+		}
     }
 
 	@Override
