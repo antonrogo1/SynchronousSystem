@@ -1,13 +1,15 @@
 package com.syncsys.roundStrategies;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import com.syncsys.ProcessNode;
 import com.syncsys.roundMessages.BellmanFordMessage;
+import com.syncsys.roundMessages.ConvergeCastMessage;
 import com.syncsys.roundMessages.RoundMessage;
 
 
 public class BellmanFordStrategy implements RoundStrategy {
-	
-	public static final int ROOT_ID = 1;
 	
 	/*** 
 	 * As defined in Distributed Algorithms by Nancy A. Lynch (p. 62). 
@@ -36,56 +38,70 @@ public class BellmanFordStrategy implements RoundStrategy {
 
 	private int ID;
 	private int dist;
-	private int numConvergeCastMessages;
-	private boolean sendingConvergeCast;
+	private boolean marked;
 	private ProcessNode process;
 	private ProcessNode parent;
+	private List<Integer> childIDs;
+	private List<Integer> markedChildIDs;
 	
 	public BellmanFordStrategy(ProcessNode process) {
-		ID = process.getID();
-		dist = (ROOT_ID == ID ? 0 : Integer.MAX_VALUE);
-		
-		this.setProcess(process);
-		this.setNumConvergeCastMessages(0);
-		this.setSendingConvergeCast(false);
-		this.setParent(ROOT_ID == process.getID() ? process : null);
+		this.ID = process.getID();
+		this.dist = Integer.MAX_VALUE;
+		this.process = process;
+		this.parent = null;
+		this.childIDs = new LinkedList<Integer>();
+		this.markedChildIDs = new LinkedList<Integer>();
 	}
 	
 	@Override
     public void generateMessages() {
 		for (ProcessNode neighbor : getProcess().getNeighbors().values()) {
 			
-			BellmanFordMessage message = new BellmanFordMessage();
-			message.setSenderID(ID);
-			message.setDistance(dist);
+			// Send BellmanFord message
+			BellmanFordMessage search = new BellmanFordMessage();
+			search.setSenderID(ID);
+			search.setDistance(dist);
+			neighbor.addMessage(search);
 			
-			//TODO: Send convergecast message
-			
-			neighbor.addMessage(message);
+			// Send ConvergeCast message
+			ConvergeCastMessage response = new ConvergeCastMessage();
+			response.setSenderID(ID);
+			response.setMarked(marked);
+			response.setParent(neighbor == parent);
+			response.setTerminating(process.isTerminating());
+			neighbor.addMessage(response);
 		}
     }
 
 	@Override
-    public void processMessages() throws InterruptedException {
-		numConvergeCastMessages = 0;
+    public void processMessages() {
+		childIDs.clear();
+		markedChildIDs.clear();
 		
-		for (int i=0; i<getProcess().getMessages().size(); i++) {
-			RoundMessage message = getProcess().getMessages().take();
+		for (RoundMessage message : process.getMessagesToProcess()) {
+			
+			// Only the message knows how it should be processed
+			// Thus we give control to the message for processing
+			// Note: a better approach involves messenger services
+			
 			message.processUsing(this);
 		}
 		
-		if (numConvergeCastMessages == getProcess().getNeighbors().size()) {
-			
-		}
+		marked = null != parent && allChildrenMarked();
+		process.setTerminating(parent.isTerminating());
     }
 
 	@Override
-    public void execute() throws InterruptedException {
+    public void execute() {
 		processMessages();
 		generateMessages();
 		
 		System.out.println("id: " + getProcess().getID() + ", dist: " + getDist());
 		//System.out.println("Messages: " + process.getMessages().toString());
+	}
+
+	private boolean allChildrenMarked() {
+	    return childIDs.size() == markedChildIDs.size();
     }
 
 	public int getDist() {
@@ -112,19 +128,27 @@ public class BellmanFordStrategy implements RoundStrategy {
 	    this.process = process;
     }
 
-	public int getNumConvergeCastMessages() {
-	    return numConvergeCastMessages;
+	public boolean isMarked() {
+	    return marked;
     }
 
-	public void setNumConvergeCastMessages(int numConvergeCastMessages) {
-	    this.numConvergeCastMessages = numConvergeCastMessages;
+	public void setMarked(boolean marked) {
+	    this.marked = marked;
     }
 
-	public boolean isSendingConvergeCast() {
-	    return sendingConvergeCast;
+	public List<Integer> getMarkedChildIDs() {
+	    return markedChildIDs;
     }
 
-	public void setSendingConvergeCast(boolean sendingConvergeCast) {
-	    this.sendingConvergeCast = sendingConvergeCast;
+	public void setMarkedChildIDs(List<Integer> markedChildIDs) {
+	    this.markedChildIDs = markedChildIDs;
+    }
+
+	public List<Integer> getChildIDs() {
+	    return childIDs;
+    }
+
+	public void setChildIDs(List<Integer> childIDs) {
+	    this.childIDs = childIDs;
     }
 }
