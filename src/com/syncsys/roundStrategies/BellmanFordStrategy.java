@@ -8,7 +8,6 @@ import com.syncsys.roundMessages.RoundMessage;
 public class BellmanFordStrategy implements RoundStrategy {
 	
 	public static final int ROOT_ID = 1;
-	public static final int POS_INF = 9999999;
 	
 	/*** 
 	 * As defined in Distributed Algorithms by Nancy A. Lynch (p. 62). 
@@ -37,24 +36,30 @@ public class BellmanFordStrategy implements RoundStrategy {
 
 	private int ID;
 	private int dist;
+	private int numConvergeCastMessages;
+	private boolean sendingConvergeCast;
 	private ProcessNode process;
 	private ProcessNode parent;
 	
 	public BellmanFordStrategy(ProcessNode process) {
 		ID = process.getID();
-		dist = ROOT_ID == process.getID() ? 0 : POS_INF;
+		dist = (ROOT_ID == ID ? 0 : Integer.MAX_VALUE);
 		
-		this.process = process;
-		this.parent = ROOT_ID == process.getID() ? process : null;
+		this.setProcess(process);
+		this.setNumConvergeCastMessages(0);
+		this.setSendingConvergeCast(false);
+		this.setParent(ROOT_ID == process.getID() ? process : null);
 	}
 	
 	@Override
     public void generateMessages() {
-		for (ProcessNode neighbor : process.getNeighbors().values()) {
+		for (ProcessNode neighbor : getProcess().getNeighbors().values()) {
 			
 			BellmanFordMessage message = new BellmanFordMessage();
 			message.setSenderID(ID);
 			message.setDistance(dist);
+			
+			//TODO: Send convergecast message
 			
 			neighbor.addMessage(message);
 		}
@@ -62,30 +67,64 @@ public class BellmanFordStrategy implements RoundStrategy {
 
 	@Override
     public void processMessages() throws InterruptedException {
-		boolean hasDistanceChanged = false;
+		numConvergeCastMessages = 0;
 		
-		for (int i=0; i<process.getMessages().size(); i++) {
-			RoundMessage roundMessage = process.getMessages().take();
-			BellmanFordMessage message = (BellmanFordMessage) roundMessage;
-			
-			int edgeWeight = process.getWeights().get(message.getSenderID());
-			if (message.getDistance() + edgeWeight < dist) {
-				dist = message.getDistance() + edgeWeight;
-				parent = process.getNeighbors().get(message.getSenderID());
-			}
+		for (int i=0; i<getProcess().getMessages().size(); i++) {
+			RoundMessage message = getProcess().getMessages().take();
+			message.processUsing(this);
 		}
 		
-		if (hasDistanceChanged) {
-			//TODO: Probably converagecast?
+		if (numConvergeCastMessages == getProcess().getNeighbors().size()) {
+			
 		}
     }
 
 	@Override
     public void execute() throws InterruptedException {
-		generateMessages();
 		processMessages();
+		generateMessages();
 		
-		System.out.println("id: " + process.getID() + ", dist: " + dist);
+		System.out.println("id: " + getProcess().getID() + ", dist: " + getDist());
 		//System.out.println("Messages: " + process.getMessages().toString());
+    }
+
+	public int getDist() {
+	    return dist;
+    }
+
+	public void setDist(int dist) {
+	    this.dist = dist;
+    }
+
+	public ProcessNode getParent() {
+	    return parent;
+    }
+
+	public void setParent(ProcessNode parent) {
+	    this.parent = parent;
+    }
+
+	public ProcessNode getProcess() {
+	    return process;
+    }
+
+	public void setProcess(ProcessNode process) {
+	    this.process = process;
+    }
+
+	public int getNumConvergeCastMessages() {
+	    return numConvergeCastMessages;
+    }
+
+	public void setNumConvergeCastMessages(int numConvergeCastMessages) {
+	    this.numConvergeCastMessages = numConvergeCastMessages;
+    }
+
+	public boolean isSendingConvergeCast() {
+	    return sendingConvergeCast;
+    }
+
+	public void setSendingConvergeCast(boolean sendingConvergeCast) {
+	    this.sendingConvergeCast = sendingConvergeCast;
     }
 }
