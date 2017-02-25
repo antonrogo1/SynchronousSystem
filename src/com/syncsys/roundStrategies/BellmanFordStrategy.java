@@ -31,7 +31,7 @@ public class BellmanFordStrategy implements RoundStrategy {
 	 * 		If 'dist' is changed, the 'parent' components is also updated
 	 * 		accordingly. After n-1 rounds, 'dist' contains the shortest
 	 * 		distance, and 'parent' the parent in the shortest paths tree.
-	 * 
+	 *
 	 */
 
 	private int ID;
