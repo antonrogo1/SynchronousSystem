@@ -31,7 +31,6 @@ public class ProcessNode implements Runnable
         isRoundCompleted = false;
         weights = new ConcurrentHashMap<Integer, Integer>();
         neighbors = new ConcurrentHashMap<Integer, ProcessNode>();
-        
         messages = new LinkedBlockingQueue<RoundMessage>();
         
         //set round to execute the Bellman Ford Algorithm
@@ -112,6 +111,8 @@ public class ProcessNode implements Runnable
 	public void setRoundStrategy(RoundStrategy roundStrategy) {
 	    this.roundStrategy = roundStrategy;
     }
+
+
 
 	public BlockingQueue<RoundMessage> getMessages() {
 	    return messages;

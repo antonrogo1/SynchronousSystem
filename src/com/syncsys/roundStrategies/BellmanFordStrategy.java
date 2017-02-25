@@ -32,7 +32,7 @@ public class BellmanFordStrategy implements RoundStrategy {
 	 * 		If 'dist' is changed, the 'parent' components is also updated
 	 * 		accordingly. After n-1 rounds, 'dist' contains the shortest
 	 * 		distance, and 'parent' the parent in the shortest paths tree.
-	 * 
+	 *
 	 */
 
 	private int ID;
@@ -88,4 +88,8 @@ public class BellmanFordStrategy implements RoundStrategy {
 		System.out.println("id: " + process.getID() + ", dist: " + dist);
 		//System.out.println("Messages: " + process.getMessages().toString());
     }
+
+	public void setDist(int dist) {
+		this.dist = dist;
+	}
 }
