@@ -24,7 +24,7 @@ public class ProcessNode implements Runnable
     private BlockingQueue<RoundMessage> messages;   //Messages send to this node
     private RoundStrategy roundStrategy;            //Strategy to execute during a round
     
-    public ProcessNode(int id, int idLeader)
+    public ProcessNode(int id)
     {
         this.id = id;
         isRoundCompleted = false;
