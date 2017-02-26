@@ -6,6 +6,7 @@ import java.util.List;
 import com.syncsys.ProcessNode;
 import com.syncsys.roundMessages.BellmanFordMessage;
 import com.syncsys.roundMessages.ConvergeCastMessage;
+import com.syncsys.roundMessages.DoneMessage;
 import com.syncsys.roundMessages.RoundMessage;
 
 
@@ -38,24 +39,22 @@ public class BellmanFordStrategy implements RoundStrategy {
 
 	private int ID;
 	private int dist;
-	private boolean marked;
-	private boolean newParent;
+	private boolean done;
 	private ProcessNode process;
 	private ProcessNode parent;
 	private List<Integer> childIDs;
-	private List<Integer> markedChildIDs;
+	private List<Integer> doneChildIDs;
 	private List<Integer> searchIDs;
 	private List<Integer> responseIDs;
 	
 	public BellmanFordStrategy(ProcessNode process) {
 		this.ID = process.getID();
 		this.dist = Integer.MAX_VALUE;
-		this.marked = false;
-		this.newParent = false;
+		this.done = false;
 		this.process = process;
 		this.parent = null;
 		this.childIDs = new LinkedList<Integer>();
-		this.markedChildIDs = new LinkedList<Integer>();
+		this.doneChildIDs = new LinkedList<Integer>();
 		this.searchIDs = new LinkedList<Integer>();
 		this.responseIDs = new LinkedList<Integer>();
 	}
@@ -74,20 +73,24 @@ public class BellmanFordStrategy implements RoundStrategy {
 			if (searchIDs.contains(neighbor.getID())) {
 				ConvergeCastMessage response = new ConvergeCastMessage();
 				response.setSenderID(ID);
-				response.setMarked(marked);
-				response.setChild(neighbor == parent);
+				response.setChild(null != parent && neighbor.getID() == parent.getID());
 				response.setTerminating(process.isTerminating());
 				neighbor.addMessage(response);
+			}
+			
+			// Send Done message 
+			if (null != parent && neighbor.getID() == parent.getID() && done) {
+				DoneMessage done = new DoneMessage();
+				done.setSenderID(ID);
+				neighbor.addMessage(done);
 			}
 		}
     }
 
 	@Override
     public void processMessages() {
-		newParent = false;
-		
 		childIDs.clear();
-		markedChildIDs.clear();
+		doneChildIDs.clear();
 		searchIDs.clear();
 		responseIDs.clear();
 		
@@ -100,13 +103,15 @@ public class BellmanFordStrategy implements RoundStrategy {
 			message.processUsing(this);
 		}
 		
-		if (null != parent && !newParent) {
-			boolean allSearchesResponded = responseIDs.size() == process.getNeighbors().size();
-			boolean allChildrenMarked = childIDs.size() == markedChildIDs.size();
-			
-			marked = allSearchesResponded && allChildrenMarked;
-			process.setTerminating(parent.isTerminating());
+		if (null != parent && allChildrenDone()) {
+			done = true;
 		}
+    }
+
+	private boolean allChildrenDone() {
+	    boolean allSearchesResponded = responseIDs.size() == process.getNeighbors().size();
+	    boolean allChildrenDone = childIDs.size() == doneChildIDs.size();
+	    return allSearchesResponded && allChildrenDone;
     }
 
 	@Override
@@ -117,7 +122,9 @@ public class BellmanFordStrategy implements RoundStrategy {
 		System.out.println(
 				"id: " + process.getID() + ", " + 
 				"dist: " + dist + ", " +
-				((marked) ? ("parent: " + parent.getID()) : ""));
+				"done: " + done + ", " +
+				"CID: " + childIDs.size() + ", " + doneChildIDs.size() + ", " +
+				((null != parent) ? ("parent: " + parent.getID()) : ""));
 	}
 
 	public int getDist() {
@@ -144,20 +151,20 @@ public class BellmanFordStrategy implements RoundStrategy {
 	    this.process = process;
     }
 
-	public boolean isMarked() {
-	    return marked;
+	public boolean isDone() {
+	    return done;
     }
 
-	public void setMarked(boolean marked) {
-	    this.marked = marked;
+	public void setDone(boolean done) {
+	    this.done = done;
     }
 
-	public List<Integer> getMarkedChildIDs() {
-	    return markedChildIDs;
+	public List<Integer> getDoneChildIDs() {
+	    return doneChildIDs;
     }
 
 	public void setMarkedChildIDs(List<Integer> markedChildIDs) {
-	    this.markedChildIDs = markedChildIDs;
+	    this.doneChildIDs = markedChildIDs;
     }
 
 	public List<Integer> getChildIDs() {
@@ -182,13 +189,5 @@ public class BellmanFordStrategy implements RoundStrategy {
 
 	public void setResponseIDs(List<Integer> responseIDs) {
 	    this.responseIDs = responseIDs;
-    }
-
-	public boolean isNewParent() {
-	    return newParent;
-    }
-
-	public void setNewParent(boolean newParent) {
-	    this.newParent = newParent;
     }
 }

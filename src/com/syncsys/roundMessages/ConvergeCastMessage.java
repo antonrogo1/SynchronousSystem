@@ -8,7 +8,6 @@ public class ConvergeCastMessage implements RoundMessage {
 	private int senderID;
 	private boolean child;			
 	private boolean terminating;
-	private boolean marked;
 	
 	public ConvergeCastMessage() {
 		setSenderID(-1);
@@ -19,22 +18,17 @@ public class ConvergeCastMessage implements RoundMessage {
 		this.senderID = senderID;
 		this.child = child;
 		this.terminating = terminating;
-		this.marked = marked;
 	}
 
 	@Override
     public void processUsing(RoundStrategy strategy) {
 		BellmanFordStrategy bfStrategy = (BellmanFordStrategy)strategy;
 		ProcessNode process = bfStrategy.getProcess();
-
+		
 		bfStrategy.getResponseIDs().add(senderID);
 		
 		if (child) {
 			bfStrategy.getChildIDs().add(senderID);
-		}
-		
-		if (child && marked) {
-			bfStrategy.getMarkedChildIDs().add(senderID);
 		}
     }
 	
@@ -50,8 +44,8 @@ public class ConvergeCastMessage implements RoundMessage {
 	    return child;
     }
 
-	public void setChild(boolean parent) {
-	    this.child = parent;
+	public void setChild(boolean child) {
+	    this.child = child;
     }
 
 	public boolean isTerminating() {
@@ -60,14 +54,6 @@ public class ConvergeCastMessage implements RoundMessage {
 
 	public void setTerminating(boolean terminating) {
 	    this.terminating = terminating;
-    }
-
-	public boolean isMarked() {
-	    return marked;
-    }
-
-	public void setMarked(boolean marked) {
-	    this.marked = marked;
     }
 
 }
