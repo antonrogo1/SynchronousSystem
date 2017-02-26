@@ -46,7 +46,6 @@ public class ProcessController
         return;
     }
 
-
     public void readInputFile(String inputFileName)
     {
 
@@ -91,6 +90,7 @@ public class ProcessController
                             ((BellmanFordStrategy) this.processes.get(rootId).getRoundStrategy()).setDist(0);
                             stepCounter++;
                         } else if (stepCounter == 4) {
+
                             /*
                   * Reading connectivity matrix depending on matrix size, and adding neighbors to the thread
                  * Each line is the current process we establishing links for, each column is the the other
@@ -118,7 +118,6 @@ public class ProcessController
         }
         catch (Exception e)
         {e.printStackTrace();}
-
 
         System.out.println();
     }
