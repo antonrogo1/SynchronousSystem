@@ -163,8 +163,8 @@ public class BellmanFordStrategy implements RoundStrategy {
 	    return doneChildIDs;
     }
 
-	public void setMarkedChildIDs(List<Integer> markedChildIDs) {
-	    this.doneChildIDs = markedChildIDs;
+	public void setDoneChildIDs(List<Integer> doneChildIDs) {
+	    this.doneChildIDs = doneChildIDs;
     }
 
 	public List<Integer> getChildIDs() {
