@@ -43,6 +43,8 @@ public class BellmanFordStrategy implements RoundStrategy {
 	private ProcessNode parent;
 	private List<Integer> childIDs;
 	private List<Integer> markedChildIDs;
+	private List<Integer> searchIDs;
+	private List<Integer> responseIDs;
 	
 	public BellmanFordStrategy(ProcessNode process) {
 		this.ID = process.getID();
@@ -52,6 +54,8 @@ public class BellmanFordStrategy implements RoundStrategy {
 		this.parent = null;
 		this.childIDs = new LinkedList<Integer>();
 		this.markedChildIDs = new LinkedList<Integer>();
+		this.searchIDs = new LinkedList<Integer>();
+		this.responseIDs = new LinkedList<Integer>();
 	}
 	
 	@Override
@@ -65,12 +69,14 @@ public class BellmanFordStrategy implements RoundStrategy {
 			neighbor.addMessage(search);
 			
 			// Send ConvergeCast message
-			ConvergeCastMessage response = new ConvergeCastMessage();
-			response.setSenderID(ID);
-			response.setMarked(marked);
-			response.setParent(neighbor == parent);
-			response.setTerminating(process.isTerminating());
-			neighbor.addMessage(response);
+			if (searchIDs.contains(neighbor.getID())) {
+				ConvergeCastMessage response = new ConvergeCastMessage();
+				response.setSenderID(ID);
+				response.setMarked(marked);
+				response.setChild(neighbor == parent);
+				response.setTerminating(process.isTerminating());
+				neighbor.addMessage(response);
+			}
 		}
     }
 
@@ -78,6 +84,8 @@ public class BellmanFordStrategy implements RoundStrategy {
     public void processMessages() {
 		childIDs.clear();
 		markedChildIDs.clear();
+		searchIDs.clear();
+		responseIDs.clear();
 		
 		for (RoundMessage message : process.getMessagesToProcess()) {
 			
@@ -89,23 +97,25 @@ public class BellmanFordStrategy implements RoundStrategy {
 		}
 		
 		if (null != parent) {
-			marked = allChildrenMarked();
+			boolean allSearchesResponded = responseIDs.size() == process.getNeighbors().size();
+			boolean allChildrenMarked = childIDs.size() == markedChildIDs.size();
+			
+			marked = allSearchesResponded && allChildrenMarked;
 			process.setTerminating(parent.isTerminating());
+			
 		}
     }
 
 	@Override
     public void execute() {
+		System.out.println(
+				"id: " + process.getID() + ", " + 
+				"dist: " + dist + 
+				((marked) ? (", parent: " + parent.getID()) : ""));
+		
 		processMessages();
 		generateMessages();
-		
-		System.out.println("id: " + getProcess().getID() + ", dist: " + getDist());
-		//System.out.println("Messages: " + process.getMessages().toString());
 	}
-
-	private boolean allChildrenMarked() {
-	    return childIDs.size() == markedChildIDs.size();
-    }
 
 	public int getDist() {
 	    return dist;
@@ -153,5 +163,21 @@ public class BellmanFordStrategy implements RoundStrategy {
 
 	public void setChildIDs(List<Integer> childIDs) {
 	    this.childIDs = childIDs;
+    }
+
+	public List<Integer> getSearchIDs() {
+	    return searchIDs;
+    }
+
+	public void setSearchIDs(List<Integer> searchIDs) {
+	    this.searchIDs = searchIDs;
+    }
+
+	public List<Integer> getResponseIDs() {
+	    return responseIDs;
+    }
+
+	public void setResponseIDs(List<Integer> responseIDs) {
+	    this.responseIDs = responseIDs;
     }
 }

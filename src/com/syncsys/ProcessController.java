@@ -45,7 +45,7 @@ public class ProcessController
                 e.printStackTrace();
             }
         }
-        System.out.println("Round completed");
+        System.out.println("Round completed\n");
         return;
     }
 

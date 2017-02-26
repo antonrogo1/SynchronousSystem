@@ -6,7 +6,7 @@ import com.syncsys.roundStrategies.RoundStrategy;
 
 public class ConvergeCastMessage implements RoundMessage {
 	private int senderID;
-	private boolean parent;
+	private boolean child;			
 	private boolean terminating;
 	private boolean marked;
 	
@@ -14,10 +14,10 @@ public class ConvergeCastMessage implements RoundMessage {
 		setSenderID(-1);
 	}
 	
-	public ConvergeCastMessage(int senderID, boolean parent, boolean terminating,
+	public ConvergeCastMessage(int senderID, boolean child, boolean terminating,
 			boolean marked) {
 		this.senderID = senderID;
-		this.parent = parent;
+		this.child = child;
 		this.terminating = terminating;
 		this.marked = marked;
 	}
@@ -27,8 +27,14 @@ public class ConvergeCastMessage implements RoundMessage {
 		BellmanFordStrategy bfStrategy = (BellmanFordStrategy)strategy;
 		ProcessNode process = bfStrategy.getProcess();
 
-		if (parent && terminating) {
-			//I should terminate
+		bfStrategy.getResponseIDs().add(senderID);
+		
+		if (child) {
+			bfStrategy.getChildIDs().add(senderID);
+		}
+		
+		if (child && marked) {
+			bfStrategy.getMarkedChildIDs().add(senderID);
 		}
     }
 	
@@ -40,12 +46,12 @@ public class ConvergeCastMessage implements RoundMessage {
 	    this.senderID = senderID;
     }
 
-	public boolean isParent() {
-	    return parent;
+	public boolean isChild() {
+	    return child;
     }
 
-	public void setParent(boolean parent) {
-	    this.parent = parent;
+	public void setChild(boolean parent) {
+	    this.child = parent;
     }
 
 	public boolean isTerminating() {

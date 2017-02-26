@@ -22,6 +22,8 @@ public class BellmanFordMessage implements RoundMessage {
     public void processUsing(RoundStrategy strategy) {
 		BellmanFordStrategy bfStrategy = (BellmanFordStrategy)strategy;
 		ProcessNode process = bfStrategy.getProcess();
+
+		bfStrategy.getSearchIDs().add(senderID);
 		
 		int edgeWeight = process.getWeights().get(senderID);
 		if (Integer.MAX_VALUE != distance && distance + edgeWeight < bfStrategy.getDist()) {
