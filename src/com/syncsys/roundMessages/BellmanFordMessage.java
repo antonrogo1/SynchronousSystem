@@ -29,6 +29,7 @@ public class BellmanFordMessage implements RoundMessage {
 		if (Integer.MAX_VALUE != distance && distance + edgeWeight < bfStrategy.getDist()) {
 			bfStrategy.setDist(distance + edgeWeight);
 			bfStrategy.setParent(process.getNeighbors().get(senderID));
+			bfStrategy.setNewParent(true);
 		}
     }
 	

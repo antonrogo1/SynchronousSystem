@@ -39,6 +39,7 @@ public class BellmanFordStrategy implements RoundStrategy {
 	private int ID;
 	private int dist;
 	private boolean marked;
+	private boolean newParent;
 	private ProcessNode process;
 	private ProcessNode parent;
 	private List<Integer> childIDs;
@@ -50,6 +51,7 @@ public class BellmanFordStrategy implements RoundStrategy {
 		this.ID = process.getID();
 		this.dist = Integer.MAX_VALUE;
 		this.marked = false;
+		this.newParent = false;
 		this.process = process;
 		this.parent = null;
 		this.childIDs = new LinkedList<Integer>();
@@ -78,19 +80,12 @@ public class BellmanFordStrategy implements RoundStrategy {
 				neighbor.addMessage(response);
 			}
 		}
-		
-		// This block of code marks the node
-		if (null != parent) {
-			boolean allSearchesResponded = responseIDs.size() == process.getNeighbors().size();
-			boolean allChildrenMarked = childIDs.size() == markedChildIDs.size();
-			
-			marked = allSearchesResponded && allChildrenMarked;
-			process.setTerminating(parent.isTerminating());
-		}
     }
 
 	@Override
     public void processMessages() {
+		newParent = false;
+		
 		childIDs.clear();
 		markedChildIDs.clear();
 		searchIDs.clear();
@@ -104,6 +99,14 @@ public class BellmanFordStrategy implements RoundStrategy {
 			
 			message.processUsing(this);
 		}
+		
+		if (null != parent && !newParent) {
+			boolean allSearchesResponded = responseIDs.size() == process.getNeighbors().size();
+			boolean allChildrenMarked = childIDs.size() == markedChildIDs.size();
+			
+			marked = allSearchesResponded && allChildrenMarked;
+			process.setTerminating(parent.isTerminating());
+		}
     }
 
 	@Override
@@ -114,7 +117,6 @@ public class BellmanFordStrategy implements RoundStrategy {
 		System.out.println(
 				"id: " + process.getID() + ", " + 
 				"dist: " + dist + ", " +
-				"CID: " + childIDs.size()+", "+markedChildIDs.size() + ", " +
 				((marked) ? ("parent: " + parent.getID()) : ""));
 	}
 
@@ -180,5 +182,13 @@ public class BellmanFordStrategy implements RoundStrategy {
 
 	public void setResponseIDs(List<Integer> responseIDs) {
 	    this.responseIDs = responseIDs;
+    }
+
+	public boolean isNewParent() {
+	    return newParent;
+    }
+
+	public void setNewParent(boolean newParent) {
+	    this.newParent = newParent;
     }
 }
