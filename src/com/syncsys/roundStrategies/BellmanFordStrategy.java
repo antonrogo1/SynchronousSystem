@@ -108,13 +108,14 @@ public class BellmanFordStrategy implements RoundStrategy {
 
 	@Override
     public void execute() {
-		System.out.println(
-				"id: " + process.getID() + ", " + 
-				"dist: " + dist + 
-				((marked) ? (", parent: " + parent.getID()) : ""));
-		
 		processMessages();
 		generateMessages();
+		
+		System.out.println(
+				"id: " + process.getID() + ", " + 
+				"dist: " + dist + ", " +
+				"CID: " + childIDs.size()+", "+markedChildIDs.size() + ", " +
+				((marked) ? ("parent: " + parent.getID()) : ""));
 	}
 
 	public int getDist() {
