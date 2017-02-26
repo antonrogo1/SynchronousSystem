@@ -1,14 +1,16 @@
 package com.syncsys.roundStrategies;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import com.syncsys.ProcessNode;
 import com.syncsys.roundMessages.BellmanFordMessage;
+import com.syncsys.roundMessages.ConvergeCastMessage;
+import com.syncsys.roundMessages.DoneMessage;
 import com.syncsys.roundMessages.RoundMessage;
 
 
 public class BellmanFordStrategy implements RoundStrategy {
-	
-	public static final int ROOT_ID = 1;
-	public static final int POS_INF = 9999999;
 	
 	/*** 
 	 * As defined in Distributed Algorithms by Nancy A. Lynch (p. 62). 
@@ -37,59 +39,155 @@ public class BellmanFordStrategy implements RoundStrategy {
 
 	private int ID;
 	private int dist;
+	private boolean done;
 	private ProcessNode process;
 	private ProcessNode parent;
+	private List<Integer> childIDs;
+	private List<Integer> doneChildIDs;
+	private List<Integer> searchIDs;
+	private List<Integer> responseIDs;
 	
 	public BellmanFordStrategy(ProcessNode process) {
-		ID = process.getID();
-		dist = ROOT_ID == process.getID() ? 0 : POS_INF;
-		
+		this.ID = process.getID();
+		this.dist = Integer.MAX_VALUE;
+		this.done = false;
 		this.process = process;
-		this.parent = ROOT_ID == process.getID() ? process : null;
+		this.parent = null;
+		this.childIDs = new LinkedList<Integer>();
+		this.doneChildIDs = new LinkedList<Integer>();
+		this.searchIDs = new LinkedList<Integer>();
+		this.responseIDs = new LinkedList<Integer>();
 	}
 	
 	@Override
     public void generateMessages() {
-		for (ProcessNode neighbor : process.getNeighbors().values()) {
+		for (ProcessNode neighbor : getProcess().getNeighbors().values()) {
 			
-			BellmanFordMessage message = new BellmanFordMessage();
-			message.setSenderID(ID);
-			message.setDistance(dist);
+			// Send BellmanFord message
+			BellmanFordMessage search = new BellmanFordMessage();
+			search.setSenderID(ID);
+			search.setDistance(dist);
+			neighbor.addMessage(search);
 			
-			neighbor.addMessage(message);
-		}
-    }
-
-	@Override
-    public void processMessages() throws InterruptedException {
-		boolean hasDistanceChanged = false;
-		
-		for (int i=0; i<process.getMessages().size(); i++) {
-			RoundMessage roundMessage = process.getMessages().take();
-			BellmanFordMessage message = (BellmanFordMessage) roundMessage;
+			// Send ConvergeCast message
+			if (searchIDs.contains(neighbor.getID())) {
+				ConvergeCastMessage response = new ConvergeCastMessage();
+				response.setSenderID(ID);
+				response.setChild(null != parent && neighbor.getID() == parent.getID());
+				response.setTerminating(process.isTerminating());
+				neighbor.addMessage(response);
+			}
 			
-			int edgeWeight = process.getWeights().get(message.getSenderID());
-			if (message.getDistance() + edgeWeight < dist) {
-				dist = message.getDistance() + edgeWeight;
-				parent = process.getNeighbors().get(message.getSenderID());
+			// Send Done message 
+			if (null != parent && neighbor.getID() == parent.getID() && done) {
+				DoneMessage done = new DoneMessage();
+				done.setSenderID(ID);
+				neighbor.addMessage(done);
 			}
 		}
-		
-		if (hasDistanceChanged) {
-			//TODO: Probably converagecast?
-		}
     }
 
 	@Override
-    public void execute() throws InterruptedException {
-		generateMessages();
-		processMessages();
+    public void processMessages() {
+		childIDs.clear();
+		doneChildIDs.clear();
+		searchIDs.clear();
+		responseIDs.clear();
 		
-		System.out.println("id: " + process.getID() + ", dist: " + dist);
-		//System.out.println("Messages: " + process.getMessages().toString());
+		for (RoundMessage message : process.getMessagesToProcess()) {
+			
+			// Only the message knows how it should be processed
+			// Thus we give control to the message for processing
+			// Note: a better approach involves messenger services
+			
+			message.processUsing(this);
+		}
+		
+		if (null != parent && allChildrenDone()) {
+			done = true;
+		}
+    }
+
+	private boolean allChildrenDone() {
+	    boolean allSearchesResponded = responseIDs.size() == process.getNeighbors().size();
+	    boolean allChildrenDone = childIDs.size() == doneChildIDs.size();
+	    return allSearchesResponded && allChildrenDone;
+    }
+
+	@Override
+    public void execute() {
+		processMessages();
+		generateMessages();
+		
+		System.out.println(
+				"id: " + process.getID() + ", " + 
+				"dist: " + dist + ", " +
+				"done: " + done + ", " +
+				"CID: " + childIDs.size() + ", " + doneChildIDs.size() + ", " +
+				((null != parent) ? ("parent: " + parent.getID()) : ""));
+	}
+
+	public int getDist() {
+	    return dist;
     }
 
 	public void setDist(int dist) {
-		this.dist = dist;
-	}
+	    this.dist = dist;
+    }
+
+	public ProcessNode getParent() {
+	    return parent;
+    }
+
+	public void setParent(ProcessNode parent) {
+	    this.parent = parent;
+    }
+
+	public ProcessNode getProcess() {
+	    return process;
+    }
+
+	public void setProcess(ProcessNode process) {
+	    this.process = process;
+    }
+
+	public boolean isDone() {
+	    return done;
+    }
+
+	public void setDone(boolean done) {
+	    this.done = done;
+    }
+
+	public List<Integer> getDoneChildIDs() {
+	    return doneChildIDs;
+    }
+
+	public void setDoneChildIDs(List<Integer> doneChildIDs) {
+	    this.doneChildIDs = doneChildIDs;
+    }
+
+	public List<Integer> getChildIDs() {
+	    return childIDs;
+    }
+
+	public void setChildIDs(List<Integer> childIDs) {
+	    this.childIDs = childIDs;
+    }
+
+	public List<Integer> getSearchIDs() {
+	    return searchIDs;
+    }
+
+	public void setSearchIDs(List<Integer> searchIDs) {
+	    this.searchIDs = searchIDs;
+    }
+
+	public List<Integer> getResponseIDs() {
+	    return responseIDs;
+    }
+
+	public void setResponseIDs(List<Integer> responseIDs) {
+	    this.responseIDs = responseIDs;
+    }
 }

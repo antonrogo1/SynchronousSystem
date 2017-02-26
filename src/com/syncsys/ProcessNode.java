@@ -1,13 +1,12 @@
 package com.syncsys;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
 
 import com.syncsys.roundMessages.RoundMessage;
 import com.syncsys.roundStrategies.BellmanFordStrategy;
@@ -19,56 +18,55 @@ import com.syncsys.roundStrategies.RoundStrategy;
 public class ProcessNode implements Runnable
 {
     private int id;                                 //Id of process
-    private volatile boolean isRoundCompleted;				//indicates to the parent that Thread finished its round
+    private volatile boolean roundCompleted;		//indicates to the parent that Thread finished its round
+    private volatile boolean terminating;           //true if terminating
     private Map<Integer, Integer> weights;   	 	//Map of tuples: (id Of Neighbor process, weight)
     private Map<Integer, ProcessNode> neighbors;    //Map of tuples: (id Of Neighbor process, neighbor)
-    private BlockingQueue<RoundMessage> messages;   //Messages send to this node
+    private BlockingQueue<RoundMessage> messages;   //Messages sent to this node
+    private List<RoundMessage> messagesToProcess;	//Messages to process this round
     private RoundStrategy roundStrategy;            //Strategy to execute during a round
     
     public ProcessNode(int id)
     {
         this.id = id;
-        isRoundCompleted = false;
-        weights = new ConcurrentHashMap<Integer, Integer>();
-        neighbors = new ConcurrentHashMap<Integer, ProcessNode>();
-        messages = new LinkedBlockingQueue<RoundMessage>();
+        this.roundCompleted = false;
+        this.weights = new ConcurrentHashMap<Integer, Integer>();
+        this.neighbors = new ConcurrentHashMap<Integer, ProcessNode>();
+        this.messages = new LinkedBlockingQueue<RoundMessage>();
+        this.messagesToProcess = new LinkedList<RoundMessage>();
         
         //set round to execute the Bellman Ford Algorithm
-        setRoundStrategy(new BellmanFordStrategy(this));
+        this.roundStrategy = new BellmanFordStrategy(this);
     }
 
     public void addNeighbor(int id, int weight, ProcessNode neighbor)
     {
-        this.weights.put(id, weight);
-        this.neighbors.put(id, neighbor);
+        weights.put(id, weight);
+        neighbors.put(id, neighbor);
     }
 
     //Single Round (also see function below)
     @Override
     public void run()
     {
-
-        //System.out.println("Running Thread : " + this.toString());
-
-        try {
-	        roundStrategy.execute();
-        } catch (InterruptedException e) {
-	        // TODO Auto-generated catch block
-	        e.printStackTrace();
-        }
-        
-        //System.out.println("Finished Thread : " + this.toString());
-        this.isRoundCompleted = true;
-        return;
+	    roundStrategy.execute();
+        roundCompleted = true;
     }
-
 
     //before each round thread should complete this step.
-    public void resetRoundToStart()
+    public void resetRoundToStart() throws InterruptedException
     {
-        this.isRoundCompleted = false;
+        roundCompleted = false;
+        
+        // Allow messages to only be processed at the start of the next round
+        messagesToProcess.clear();
+        
+        int numMessages = messages.size();
+		for (int i = 0; i < numMessages; i++) {
+			RoundMessage message = messages.take();
+			messagesToProcess.add(message);
+		}
     }
-
 
     //Getters/Setters
 
@@ -97,11 +95,19 @@ public class ProcessNode implements Runnable
     }
 
 	public boolean isRoundCompleted() {
-        return isRoundCompleted;
+        return roundCompleted;
     }
 
     public void setRoundCompleted(boolean roundCompleted) {
-        isRoundCompleted = roundCompleted;
+        this.roundCompleted = roundCompleted;
+    }
+
+	public boolean isTerminating() {
+	    return terminating;
+    }
+
+	public void setTerminating(boolean terminating) {
+	    this.terminating = terminating;
     }
 
 	public RoundStrategy getRoundStrategy() {
@@ -111,8 +117,6 @@ public class ProcessNode implements Runnable
 	public void setRoundStrategy(RoundStrategy roundStrategy) {
 	    this.roundStrategy = roundStrategy;
     }
-
-
 
 	public BlockingQueue<RoundMessage> getMessages() {
 	    return messages;
@@ -131,13 +135,20 @@ public class ProcessNode implements Runnable
         }
     }
 
-    @Override
+    public List<RoundMessage> getMessagesToProcess() {
+	    return messagesToProcess;
+    }
+
+	public void setMessagesToProcess(List<RoundMessage> messagesToProcess) {
+	    this.messagesToProcess = messagesToProcess;
+    }
+
+	@Override
     public String toString() {
         return "Process{" +
                 "id=" + id +
                 ", neighbor weights=" + weights +
                 '}';
     }
-
 
 }

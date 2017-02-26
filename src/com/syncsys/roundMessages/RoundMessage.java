@@ -1,3 +1,8 @@
 package com.syncsys.roundMessages;
 
-public interface RoundMessage { }
+import com.syncsys.ProcessNode;
+import com.syncsys.roundStrategies.RoundStrategy;
+
+public interface RoundMessage { 
+	void processUsing(RoundStrategy strategy);
+}

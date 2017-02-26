@@ -4,8 +4,6 @@ import com.syncsys.roundStrategies.BellmanFordStrategy;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.*;
 
 /**
@@ -25,7 +23,12 @@ public class ProcessController
 
         for(ProcessNode processNode : processes.values())
         {
-            processNode.resetRoundToStart();
+            try {
+	            processNode.resetRoundToStart();
+            } catch (InterruptedException e) {
+	            // TODO Auto-generated catch block
+	            e.printStackTrace();
+            }
         }
 
         for(ProcessNode processNode : processes.values())
@@ -42,7 +45,7 @@ public class ProcessController
                 e.printStackTrace();
             }
         }
-        System.out.println("Round completed");
+        System.out.println("Round completed\n");
         return;
     }
 
@@ -80,14 +83,14 @@ public class ProcessController
                             //Reading second line - getting ids of processes and storing them to the HashMap
                             for (String stringId : line.split(" ")) {
                                 ProcessNode processNode = new ProcessNode(Integer.parseInt(stringId));
-                                this.processes.put(Integer.parseInt(stringId), processNode);
+                                processes.put(Integer.parseInt(stringId), processNode);
                                 orderedProcesses.add(processNode);
                             }
                             stepCounter++;
                         } else if (stepCounter == 3) {
                             //Reading thirdline line - getting id of root process
                             int rootId = Integer.parseInt(line);
-                            ((BellmanFordStrategy) this.processes.get(rootId).getRoundStrategy()).setDist(0);
+                            ((BellmanFordStrategy) processes.get(rootId).getRoundStrategy()).setDist(0);
                             stepCounter++;
                         } else if (stepCounter == 4) {
 
