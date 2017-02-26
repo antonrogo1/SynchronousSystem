@@ -78,6 +78,15 @@ public class BellmanFordStrategy implements RoundStrategy {
 				neighbor.addMessage(response);
 			}
 		}
+		
+		// This block of code marks the node
+		if (null != parent) {
+			boolean allSearchesResponded = responseIDs.size() == process.getNeighbors().size();
+			boolean allChildrenMarked = childIDs.size() == markedChildIDs.size();
+			
+			marked = allSearchesResponded && allChildrenMarked;
+			process.setTerminating(parent.isTerminating());
+		}
     }
 
 	@Override
@@ -94,15 +103,6 @@ public class BellmanFordStrategy implements RoundStrategy {
 			// Note: a better approach involves messenger services
 			
 			message.processUsing(this);
-		}
-		
-		if (null != parent) {
-			boolean allSearchesResponded = responseIDs.size() == process.getNeighbors().size();
-			boolean allChildrenMarked = childIDs.size() == markedChildIDs.size();
-			
-			marked = allSearchesResponded && allChildrenMarked;
-			process.setTerminating(parent.isTerminating());
-			
 		}
     }
 
