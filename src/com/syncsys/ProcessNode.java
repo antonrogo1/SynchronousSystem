@@ -61,7 +61,6 @@ public class ProcessNode implements Runnable
         
         // Allow messages to only be processed at the start of the next round
         messagesToProcess.clear();
-        
         int numMessages = messages.size();
 		for (int i = 0; i < numMessages; i++) {
 			RoundMessage message = messages.take();

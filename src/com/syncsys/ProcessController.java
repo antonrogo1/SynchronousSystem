@@ -12,10 +12,12 @@ import java.util.*;
 public class ProcessController
 {
     private Map<Integer, ProcessNode> processes;
+    private boolean allNodesTerminated;
 
     public ProcessController()
     {
         processes = new LinkedHashMap<Integer, ProcessNode>(); //We want to quickly get to the process by using its id.
+        allNodesTerminated = false;
     }
 
     public void runSingleRound()
@@ -26,14 +28,21 @@ public class ProcessController
             try {
 	            processNode.resetRoundToStart();
             } catch (InterruptedException e) {
+	            // TODO Auto-generated catch block
 	            e.printStackTrace();
             }
         }
 
+        // Run each node, check to see if all nodes are terminated
+        allNodesTerminated = true;
         for(ProcessNode processNode : processes.values())
         {
-            Thread thread = new Thread(processNode);
-            thread.start();
+        	if (!processNode.isTerminating()) {
+                Thread thread = new Thread(processNode);
+                thread.start();
+
+                allNodesTerminated = false;
+        	}
         }
 
         while(this.isRoundComplete() ==false)
@@ -47,6 +56,7 @@ public class ProcessController
         System.out.println("Round completed\n");
         return;
     }
+
 
     public void readInputFile(String inputFileName)
     {
@@ -89,15 +99,14 @@ public class ProcessController
                         } else if (stepCounter == 3) {
                             //Reading thirdline line - getting id of root process
                             int rootId = Integer.parseInt(line);
-                            ((BellmanFordStrategy) processes.get(rootId).getRoundStrategy()).setDist(0);
+                            ((BellmanFordStrategy) processes.get(rootId).getRoundStrategy()).setRoot(true);
                             stepCounter++;
                         } else if (stepCounter == 4) {
-
-                            /*
-                  * Reading connectivity matrix depending on matrix size, and adding neighbors to the thread
-                 * Each line is the current process we establishing links for, each column is the the other
-                 * processes in relation to current process.
-                 * */
+			                /*
+			                * Reading connectivity matrix depending on matrix size, and adding neighbors to the thread
+			                * Each line is the current process we establishing links for, each column is the the other
+			                * processes in relation to current process.
+			                * */
                             ProcessNode processNode = orderedProcesses.get(nodeCounter);
                             String[] connectionWeights = line.split("\\s+");
                             for (int i = 0; i < connectionWeights.length; i++) {
@@ -121,21 +130,27 @@ public class ProcessController
         catch (Exception e)
         {e.printStackTrace();}
 
+
         System.out.println();
     }
-
 
     //Function to check if round complete
     private boolean isRoundComplete()
     {
-        boolean isRoundComplete = true;
-
         for(ProcessNode processNode : processes.values())
         {
-            if (processNode.isRoundCompleted() ==false)
+            if (!processNode.isRoundCompleted() && !processNode.isTerminating())
                 return false;
 
         }
-        return isRoundComplete;
+        return true;
+    }
+
+	public boolean isAllNodesTerminated() {
+	    return allNodesTerminated;
+    }
+
+	public void setAllNodesTerminated(boolean allNodesTerminated) {
+	    this.allNodesTerminated = allNodesTerminated;
     }
 }

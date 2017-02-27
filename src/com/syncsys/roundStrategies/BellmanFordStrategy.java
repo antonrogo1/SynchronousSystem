@@ -8,6 +8,7 @@ import com.syncsys.roundMessages.BellmanFordMessage;
 import com.syncsys.roundMessages.ConvergeCastMessage;
 import com.syncsys.roundMessages.DoneMessage;
 import com.syncsys.roundMessages.RoundMessage;
+import com.syncsys.roundMessages.TerminateMessage;
 
 
 public class BellmanFordStrategy implements RoundStrategy {
@@ -39,6 +40,7 @@ public class BellmanFordStrategy implements RoundStrategy {
 
 	private int ID;
 	private int dist;
+	private boolean root;
 	private boolean done;
 	private ProcessNode process;
 	private ProcessNode parent;
@@ -50,6 +52,7 @@ public class BellmanFordStrategy implements RoundStrategy {
 	public BellmanFordStrategy(ProcessNode process) {
 		this.ID = process.getID();
 		this.dist = Integer.MAX_VALUE;
+		this.root = false;
 		this.done = false;
 		this.process = process;
 		this.parent = null;
@@ -74,15 +77,21 @@ public class BellmanFordStrategy implements RoundStrategy {
 				ConvergeCastMessage response = new ConvergeCastMessage();
 				response.setSenderID(ID);
 				response.setChild(null != parent && neighbor.getID() == parent.getID());
-				response.setTerminating(process.isTerminating());
 				neighbor.addMessage(response);
 			}
 			
-			// Send Done message 
+			// Send Done message to parent
 			if (null != parent && neighbor.getID() == parent.getID() && done) {
 				DoneMessage done = new DoneMessage();
 				done.setSenderID(ID);
 				neighbor.addMessage(done);
+			}
+			
+			// Send Terminate message to children
+			if (process.isTerminating() && childIDs.contains(neighbor.getID())) {
+				TerminateMessage terminate = new TerminateMessage();
+				terminate.setSenderID(ID);
+				neighbor.addMessage(terminate);
 			}
 		}
     }
@@ -105,6 +114,10 @@ public class BellmanFordStrategy implements RoundStrategy {
 		if (null != parent && allChildrenDone()) {
 			done = true;
 		}
+		
+		if (root && allChildrenDone()) {
+			process.setTerminating(true);
+		}
     }
 
 	private boolean allChildrenDone() {
@@ -122,7 +135,8 @@ public class BellmanFordStrategy implements RoundStrategy {
 				"id: " + process.getID() + ", " + 
 				"dist: " + dist + ", " +
 				"done: " + done + ", " +
-				"CID: " + childIDs.size() + ", " + doneChildIDs.size() + ", " +
+				"terminating: " + process.isTerminating() + ", " +
+				"children/done: " + childIDs.size() + "/" + doneChildIDs.size() + ", " +
 				((null != parent) ? ("parent: " + parent.getID()) : ""));
 	}
 
@@ -158,6 +172,15 @@ public class BellmanFordStrategy implements RoundStrategy {
 
 	public void setDone(boolean done) {
 	    this.done = done;
+    }
+
+	public boolean isRoot() {
+	    return root;
+    }
+
+	public void setRoot(boolean root) {
+	    this.root = root;
+	    if (root) { dist = 0; }
     }
 
 	public List<Integer> getDoneChildIDs() {
