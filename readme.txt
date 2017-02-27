@@ -11,7 +11,6 @@ input.txt or by changing "input.txt" in
 Main.java
 
 
-
 How to execute:
 
 Place input file input.txt in the same directory of location of SynchronousSystem.jar file.
