@@ -7,7 +7,7 @@ public class Main {
     public static void main(String[] args)
     {
         ProcessController processController = new ProcessController();
-        processController.readInputFile("professorInput.txt");
+        processController.readInputFile("input.txt");
 
         System.out.println("Finished reading InputFile");
 
@@ -18,12 +18,7 @@ public class Main {
         System.out.println("All Nodes Terminated\n");
         System.out.println("Final output: \n");
         System.out.println("Root ID: " + processController.getRootID());
-        
-        Map<Integer, Integer> nodeParentPairs = processController.getNodeParentPairs();
-        for (Integer nodeID : nodeParentPairs.keySet()) {
-        	System.out.println(
-        			"Node ID: " + nodeID + ", " + 
-        			"Parent ID: " + nodeParentPairs.get(nodeID));
-        }
+
+        processController.printFinalResult();
     }
 }
