@@ -25,6 +25,7 @@ public class ProcessNode implements Runnable
     private BlockingQueue<RoundMessage> messages;   //Messages sent to this node
     private List<RoundMessage> messagesToProcess;	//Messages to process this round
     private RoundStrategy roundStrategy;            //Strategy to execute during a round
+    private boolean isRoot;            //Strategy to execute during a round
     
     public ProcessNode(int id)
     {
@@ -67,6 +68,15 @@ public class ProcessNode implements Runnable
 			messagesToProcess.add(message);
 		}
     }
+
+    public void addMessage(RoundMessage message) {
+        try {
+            messages.put(message);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     //Getters/Setters
 
@@ -124,15 +134,6 @@ public class ProcessNode implements Runnable
 
 	public void setMessages(BlockingQueue<RoundMessage> messages) {
 	    this.messages = messages;
-    }
-	
-	public void addMessage(RoundMessage message) {
-	    try {
-	        messages.put(message);
-        } catch (InterruptedException e) {
-	        // TODO Auto-generated catch block
-	        e.printStackTrace();
-        }
     }
 
     public List<RoundMessage> getMessagesToProcess() {

@@ -5,7 +5,7 @@ public class Main {
     public static void main(String[] args)
     {
         ProcessController processController = new ProcessController();
-        processController.readInputFile("professorInput.txt");
+        processController.readInputFile("inputSimple.txt");
 
         System.out.println("Finished reading InputFile");
 

@@ -43,8 +43,8 @@ public class BellmanFordStrategy implements RoundStrategy {
 	private ProcessNode process;
 	private ProcessNode parent;
 	private List<Integer> childIDs;
-	private List<Integer> doneChildIDs;
-	private List<Integer> searchIDs;
+	private List<Integer> doneChildIDs;   //List of Children nodes that identified them as Complete (them and their children found Shortest Path)
+	private List<Integer> searchIDs;      //List of Children nodes that identified them as Complete (them and their children found Shortest Path)
 	private List<Integer> responseIDs;
 	
 	public BellmanFordStrategy(ProcessNode process) {
@@ -98,7 +98,6 @@ public class BellmanFordStrategy implements RoundStrategy {
 			
 			// Only the message knows how it should be processed
 			// Thus we give control to the message for processing
-			// Note: a better approach involves messenger services
 			
 			message.processUsing(this);
 		}
@@ -127,6 +126,9 @@ public class BellmanFordStrategy implements RoundStrategy {
 				((null != parent) ? ("parent: " + parent.getID()) : ""));
 	}
 
+
+	//getters / setters
+
 	public int getDist() {
 	    return dist;
     }
@@ -134,7 +136,6 @@ public class BellmanFordStrategy implements RoundStrategy {
 	public void setDist(int dist) {
 	    this.dist = dist;
     }
-
 	public ProcessNode getParent() {
 	    return parent;
     }
