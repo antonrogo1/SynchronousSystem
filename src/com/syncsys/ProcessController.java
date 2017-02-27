@@ -48,7 +48,7 @@ public class ProcessController
         while(this.isRoundComplete() ==false)
         {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -147,6 +147,14 @@ public class ProcessController
     }
 
 	public boolean isAllNodesTerminated() {
+        if(this.allNodesTerminated == true)
+        {
+            System.out.println("Final Result:");
+            for(ProcessNode processNode : this.processes.values())
+            {
+                System.out.println("Process ID:" + processNode.getID() + "; Distance:" + ((BellmanFordStrategy)processNode.getRoundStrategy()).getDist() + "; Path:" + processNode.describeShortestPath(processNode));
+            }
+        }
 	    return allNodesTerminated;
     }
 

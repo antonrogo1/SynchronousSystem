@@ -25,7 +25,6 @@ public class ProcessNode implements Runnable
     private BlockingQueue<RoundMessage> messages;   //Messages sent to this node
     private List<RoundMessage> messagesToProcess;	//Messages to process this round
     private RoundStrategy roundStrategy;            //Strategy to execute during a round
-    private boolean isRoot;            //Strategy to execute during a round
     
     public ProcessNode(int id)
     {
@@ -75,6 +74,28 @@ public class ProcessNode implements Runnable
             e.printStackTrace();
         }
     }
+
+
+    //recursive method that return tuple (shortest Path description and total distance)
+    public String describeShortestPath(ProcessNode processNode)
+    {
+        String pathDescription =  Integer.toString(processNode.getID()) ;
+
+        if(!((BellmanFordStrategy)processNode.getRoundStrategy()).isRoot())
+        {
+            ProcessNode parentProcessNode = ((BellmanFordStrategy)processNode.getRoundStrategy()).getParent();
+            String parentChain = processNode.describeShortestPath(parentProcessNode);
+            pathDescription+= " =>" + parentChain;
+
+            return pathDescription;
+        }
+        else
+        {
+            return Integer.toString(processNode.getID());
+        }
+    }
+
+
 
 
     //Getters/Setters
