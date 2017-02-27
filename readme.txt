@@ -117,16 +117,16 @@ All Nodes Terminated
 Final output:
 
 Root ID: 0
-Process ID:0; Distance:0; Shortest Path:0
-Process ID:1; Distance:1; Shortest Path:1 =>4 =>0
-Process ID:2; Distance:0; Shortest Path:2 =>0
-Process ID:3; Distance:1; Shortest Path:3 =>2 =>0
-Process ID:4; Distance:1; Shortest Path:4 =>0
-Process ID:5; Distance:1; Shortest Path:5 =>4 =>0
-Process ID:6; Distance:2; Shortest Path:6 =>9 =>2 =>0
-Process ID:7; Distance:2; Shortest Path:7 =>0
-Process ID:8; Distance:1; Shortest Path:8 =>3 =>2 =>0
-Process ID:9; Distance:1; Shortest Path:9 =>2 =>0
+Process ID: 0; Distance: 0; Shortest Path: 0
+Process ID: 1; Distance: 1; Shortest Path: 1 =>4 =>0
+Process ID: 2; Distance: 0; Shortest Path: 2 =>0
+Process ID: 3; Distance: 1; Shortest Path: 3 =>2 =>0
+Process ID: 4; Distance: 1; Shortest Path: 4 =>0
+Process ID: 5; Distance: 1; Shortest Path: 5 =>4 =>0
+Process ID: 6; Distance: 2; Shortest Path: 6 =>9 =>2 =>0
+Process ID: 7; Distance: 2; Shortest Path: 7 =>0
+Process ID: 8; Distance: 1; Shortest Path: 8 =>3 =>2 =>0
+Process ID: 9; Distance: 1; Shortest Path: 9 =>2 =>0
 
 Process finished with exit code 0
 
