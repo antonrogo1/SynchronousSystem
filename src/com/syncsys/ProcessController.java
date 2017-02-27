@@ -178,7 +178,7 @@ public class ProcessController
     {
         for (ProcessNode processNode : this.processes.values())
         {
-            System.out.println("Process ID:" + processNode.getID() + "; Distance:" + ((BellmanFordStrategy)processNode.getRoundStrategy()).getDist() + "; Shortest Path:" + processNode.describeShortestPath(processNode));
+            System.out.println("Process ID: " + processNode.getID() + "; Distance: " + ((BellmanFordStrategy)processNode.getRoundStrategy()).getDist() + "; Shortest Path: " + processNode.describeShortestPath(processNode));
         }
     }
 
