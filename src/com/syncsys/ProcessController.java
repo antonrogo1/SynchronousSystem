@@ -13,6 +13,7 @@ public class ProcessController
 {
     private Map<Integer, ProcessNode> processes;
     private boolean allNodesTerminated;
+    private int rootID;
 
     public ProcessController()
     {
@@ -34,14 +35,11 @@ public class ProcessController
         }
 
         // Run each node, check to see if all nodes are terminated
-        allNodesTerminated = true;
         for(ProcessNode processNode : processes.values())
         {
         	if (!processNode.isTerminating()) {
                 Thread thread = new Thread(processNode);
                 thread.start();
-                
-                allNodesTerminated = false;
         	}
         }
 
@@ -98,8 +96,8 @@ public class ProcessController
                             stepCounter++;
                         } else if (stepCounter == 3) {
                             //Reading thirdline line - getting id of root process
-                            int rootId = Integer.parseInt(line);
-                            ((BellmanFordStrategy) processes.get(rootId).getRoundStrategy()).setRoot(true);
+                            rootID = Integer.parseInt(line);
+                            ((BellmanFordStrategy) processes.get(rootID).getRoundStrategy()).setRoot(true);
                             stepCounter++;
                         } else if (stepCounter == 4) {
 			                /*
@@ -145,9 +143,32 @@ public class ProcessController
         }
         return true;
     }
+    
+    public int getRootID() {
+    	return rootID;
+    }
+    
+    public Map<Integer, Integer> getNodeParentPairs() {
+    	Map<Integer, Integer> nodeParentPairs = new LinkedHashMap<Integer, Integer>();
+    	for(ProcessNode processNode : processes.values()) {
+    		if (processNode.getID() != rootID) {
+    			ProcessNode parent = ((BellmanFordStrategy) processNode.getRoundStrategy()).getParent();
+    			nodeParentPairs.put(processNode.getID(), parent.getID());
+    		}
+    	}
+    	return nodeParentPairs;
+    }
 
 	public boolean isAllNodesTerminated() {
-	    return allNodesTerminated;
+        allNodesTerminated = true;
+        for(ProcessNode processNode : processes.values())
+        {
+        	if (!processNode.isTerminating()) {
+                allNodesTerminated = false;
+        	}
+        }
+        
+        return allNodesTerminated;
     }
 
 	public void setAllNodesTerminated(boolean allNodesTerminated) {
