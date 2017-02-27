@@ -13,6 +13,7 @@ public class ProcessController
 {
     private Map<Integer, ProcessNode> processes;
     private boolean allNodesTerminated;
+    private int rootID;
 
     public ProcessController()
     {
@@ -40,7 +41,7 @@ public class ProcessController
         	if (!processNode.isTerminating()) {
                 Thread thread = new Thread(processNode);
                 thread.start();
-
+                
                 allNodesTerminated = false;
         	}
         }
@@ -48,7 +49,7 @@ public class ProcessController
         while(this.isRoundComplete() ==false)
         {
             try {
-                Thread.sleep(1);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -98,8 +99,8 @@ public class ProcessController
                             stepCounter++;
                         } else if (stepCounter == 3) {
                             //Reading thirdline line - getting id of root process
-                            int rootId = Integer.parseInt(line);
-                            ((BellmanFordStrategy) processes.get(rootId).getRoundStrategy()).setRoot(true);
+                            rootID = Integer.parseInt(line);
+                            ((BellmanFordStrategy) processes.get(rootID).getRoundStrategy()).setRoot(true);
                             stepCounter++;
                         } else if (stepCounter == 4) {
 			                /*
@@ -146,16 +147,39 @@ public class ProcessController
         return true;
     }
 
+    public int getRootID() {
+    	return rootID;
+    }
+
+    public Map<Integer, Integer> getNodeParentPairs() {
+    	Map<Integer, Integer> nodeParentPairs = new LinkedHashMap<Integer, Integer>();
+    	for(ProcessNode processNode : processes.values()) {
+    		if (processNode.getID() != rootID) {
+    			ProcessNode parent = ((BellmanFordStrategy) processNode.getRoundStrategy()).getParent();
+    			nodeParentPairs.put(processNode.getID(), parent.getID());
+    		}
+    	}
+    	return nodeParentPairs;
+    }
+
 	public boolean isAllNodesTerminated() {
-        if(this.allNodesTerminated == true)
+        allNodesTerminated = true;
+        for(ProcessNode processNode : processes.values())
         {
-            System.out.println("Final Result:");
-            for(ProcessNode processNode : this.processes.values())
-            {
-                System.out.println("Process ID:" + processNode.getID() + "; Distance:" + ((BellmanFordStrategy)processNode.getRoundStrategy()).getDist() + "; Path:" + processNode.describeShortestPath(processNode));
-            }
+        	if (!processNode.isTerminating()) {
+                allNodesTerminated = false;
+        	}
         }
-	    return allNodesTerminated;
+
+        return allNodesTerminated;
+    }
+
+    public void printFinalResult()
+    {
+        for (ProcessNode processNode : this.processes.values())
+        {
+            System.out.println("Process ID:" + processNode.getID() + "; Distance:" + ((BellmanFordStrategy)processNode.getRoundStrategy()).getDist() + "; Shortest Path:" + processNode.describeShortestPath(processNode));
+        }
     }
 
 	public void setAllNodesTerminated(boolean allNodesTerminated) {
