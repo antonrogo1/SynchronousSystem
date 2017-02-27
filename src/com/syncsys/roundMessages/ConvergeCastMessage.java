@@ -7,17 +7,14 @@ import com.syncsys.roundStrategies.RoundStrategy;
 public class ConvergeCastMessage implements RoundMessage {
 	private int senderID;
 	private boolean child;			
-	private boolean terminating;
 	
 	public ConvergeCastMessage() {
 		setSenderID(-1);
 	}
 	
-	public ConvergeCastMessage(int senderID, boolean child, boolean terminating,
-			boolean marked) {
+	public ConvergeCastMessage(int senderID, boolean child, boolean marked) {
 		this.senderID = senderID;
 		this.child = child;
-		this.terminating = terminating;
 	}
 
 	@Override
@@ -46,14 +43,6 @@ public class ConvergeCastMessage implements RoundMessage {
 
 	public void setChild(boolean child) {
 	    this.child = child;
-    }
-
-	public boolean isTerminating() {
-	    return terminating;
-    }
-
-	public void setTerminating(boolean terminating) {
-	    this.terminating = terminating;
     }
 
 }

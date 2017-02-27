@@ -9,32 +9,9 @@ public class Main {
 
         System.out.println("Finished reading InputFile");
 
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
-        processController.runSingleRound();
+        while (!processController.isAllNodesTerminated()) {
+            processController.runSingleRound();
+        }
 
     }
 }
