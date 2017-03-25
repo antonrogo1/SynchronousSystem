@@ -5,15 +5,15 @@ import com.syncsys.roundStrategies.BellmanFordStrategy;
 import com.syncsys.roundStrategies.RoundStrategy;
 
 public class BellmanFordMessage implements RoundMessage {
-	private int senderID;
+	private String senderID;
 	private int distance;
 	
 	public BellmanFordMessage() {
-		setSenderID(-1);
+		setSenderID("-1");
 		setDistance(Integer.MAX_VALUE);
 	}
 	
-	public BellmanFordMessage(int senderID, int distance) {
+	public BellmanFordMessage(String senderID, int distance) {
 		this.senderID = senderID;
 		this.distance = distance;
 	}
@@ -24,21 +24,24 @@ public class BellmanFordMessage implements RoundMessage {
 		ProcessNode process = bfStrategy.getProcess();
 
 		bfStrategy.getSearchIDs().add(senderID);
-		
+
+		if(process.getWeights().get(senderID) == null)
+			System.out.println("Test");
+
 		int edgeWeight = process.getWeights().get(senderID);
 		if (Integer.MAX_VALUE != distance && distance + edgeWeight < bfStrategy.getDist()) {
 			bfStrategy.setDist(distance + edgeWeight);
 			bfStrategy.setParent(process.getNeighbors().get(senderID));
 		}
     }
-	
-	public int getSenderID() {
-	    return senderID;
-    }
 
-	public void setSenderID(int senderID) {
-	    this.senderID = senderID;
-    }
+	public String getSenderID() {
+		return senderID;
+	}
+
+	public void setSenderID(String senderID) {
+		this.senderID = senderID;
+	}
 
 	public int getDistance() {
 	    return distance;

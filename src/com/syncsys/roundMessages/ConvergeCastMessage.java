@@ -5,14 +5,14 @@ import com.syncsys.roundStrategies.BellmanFordStrategy;
 import com.syncsys.roundStrategies.RoundStrategy;
 
 public class ConvergeCastMessage implements RoundMessage {
-	private int senderID;
+	private String senderID;
 	private boolean child;			
 	
 	public ConvergeCastMessage() {
-		setSenderID(-1);
+		setSenderID("-1");
 	}
 	
-	public ConvergeCastMessage(int senderID, boolean child, boolean marked) {
+	public ConvergeCastMessage(String senderID, boolean child, boolean marked) {
 		this.senderID = senderID;
 		this.child = child;
 	}
@@ -27,14 +27,14 @@ public class ConvergeCastMessage implements RoundMessage {
 			bfStrategy.getChildIDs().add(senderID);
 		}
     }
-	
-	public int getSenderID() {
-	    return senderID;
-    }
 
-	public void setSenderID(int senderID) {
-	    this.senderID = senderID;
-    }
+	public String getSenderID() {
+		return senderID;
+	}
+
+	public void setSenderID(String senderID) {
+		this.senderID = senderID;
+	}
 
 	public boolean isChild() {
 	    return child;

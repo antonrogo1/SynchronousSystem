@@ -17,21 +17,21 @@ import com.syncsys.roundStrategies.RoundStrategy;
  */
 public class ProcessNode implements Runnable
 {
-    private int id;                                 //Id of process
+    private String id;                                 //Id of process
     private volatile boolean roundCompleted;		//indicates to the parent that Thread finished its round
     private volatile boolean terminating;           //true if terminating
-    private Map<Integer, Integer> weights;   	 	//Map of tuples: (id Of Neighbor process, weight)
-    private Map<Integer, ProcessNode> neighbors;    //Map of tuples: (id Of Neighbor process, neighbor)
+    private Map<String, Integer> weights;   	 	//Map of tuples: (id Of Neighbor process, weight)
+    private Map<String, ProcessNode> neighbors;    //Map of tuples: (id Of Neighbor process, neighbor)
     private BlockingQueue<RoundMessage> messages;   //Messages sent to this node
     private List<RoundMessage> messagesToProcess;	//Messages to process this round
     private RoundStrategy roundStrategy;            //Strategy to execute during a round
     
-    public ProcessNode(int id)
+    public ProcessNode(String id)
     {
         this.id = id;
         this.roundCompleted = false;
-        this.weights = new ConcurrentHashMap<Integer, Integer>();
-        this.neighbors = new ConcurrentHashMap<Integer, ProcessNode>();
+        this.weights = new ConcurrentHashMap<String, Integer>();
+        this.neighbors = new ConcurrentHashMap<String, ProcessNode>();
         this.messages = new LinkedBlockingQueue<RoundMessage>();
         this.messagesToProcess = new LinkedList<RoundMessage>();
         
@@ -39,7 +39,7 @@ public class ProcessNode implements Runnable
         this.roundStrategy = new BellmanFordStrategy(this);
     }
 
-    public void addNeighbor(int id, int weight, ProcessNode neighbor)
+    public void addNeighbor(String id, int weight, ProcessNode neighbor)
     {
         weights.put(id, weight);
         neighbors.put(id, neighbor);
@@ -79,7 +79,7 @@ public class ProcessNode implements Runnable
     //recursive method that return tuple (shortest Path description and total distance)
     public String describeShortestPath(ProcessNode processNode)
     {
-        String pathDescription =  Integer.toString(processNode.getID()) ;
+        String pathDescription =  processNode.getId() ;
 
         if(!((BellmanFordStrategy)processNode.getRoundStrategy()).isRoot())
         {
@@ -91,7 +91,7 @@ public class ProcessNode implements Runnable
         }
         else
         {
-            return Integer.toString(processNode.getID());
+            return processNode.getId();
         }
     }
 
@@ -100,31 +100,32 @@ public class ProcessNode implements Runnable
 
     //Getters/Setters
 
-    public int getID() {
+
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public Map<Integer, Integer> getWeights() {
+    public Map<String, Integer> getWeights() {
         return weights;
     }
 
-    public void setWeights(HashMap<Integer, Integer> weights) {
+    public void setWeights(Map<String, Integer> weights) {
         this.weights = weights;
     }
 
-    public Map<Integer, ProcessNode> getNeighbors() {
-	    return neighbors;
+    public Map<String, ProcessNode> getNeighbors() {
+        return neighbors;
     }
 
-	public void setNeighbors(Map<Integer, ProcessNode> neighbors) {
-	    this.neighbors = neighbors;
+    public void setNeighbors(Map<String, ProcessNode> neighbors) {
+        this.neighbors = neighbors;
     }
 
-	public boolean isRoundCompleted() {
+    public boolean isRoundCompleted() {
         return roundCompleted;
     }
 

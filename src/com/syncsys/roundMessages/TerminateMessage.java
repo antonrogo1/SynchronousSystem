@@ -5,10 +5,10 @@ import com.syncsys.roundStrategies.BellmanFordStrategy;
 import com.syncsys.roundStrategies.RoundStrategy;
 
 public class TerminateMessage implements RoundMessage {
-	private int senderID;
+	private String senderID;
 
 	public TerminateMessage() {
-		setSenderID(-1);
+		setSenderID("-1");
 	}
 
 	@Override
@@ -19,12 +19,11 @@ public class TerminateMessage implements RoundMessage {
 		process.setTerminating(true);
     }
 
-	public int getSenderID() {
-	    return senderID;
-    }
+	public String getSenderID() {
+		return senderID;
+	}
 
-	public void setSenderID(int senderID) {
-	    this.senderID = senderID;
-    }
-
+	public void setSenderID(String senderID) {
+		this.senderID = senderID;
+	}
 }

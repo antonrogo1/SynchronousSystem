@@ -5,10 +5,10 @@ import com.syncsys.roundStrategies.BellmanFordStrategy;
 import com.syncsys.roundStrategies.RoundStrategy;
 
 public class DoneMessage implements RoundMessage {
-	private int senderID;
+	private String senderID;
 	
 	public DoneMessage() {
-		setSenderID(-1);
+		setSenderID("-1");
 	}
 
 	@Override
@@ -17,13 +17,12 @@ public class DoneMessage implements RoundMessage {
 		
 		bfStrategy.getDoneChildIDs().add(senderID);
     }
-	
-	public int getSenderID() {
-	    return senderID;
-    }
 
-	public void setSenderID(int senderID) {
-	    this.senderID = senderID;
-    }
+	public String getSenderID() {
+		return senderID;
+	}
 
+	public void setSenderID(String senderID) {
+		this.senderID = senderID;
+	}
 }

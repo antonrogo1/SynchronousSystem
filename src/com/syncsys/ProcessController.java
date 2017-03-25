@@ -11,13 +11,13 @@ import java.util.*;
  */
 public class ProcessController
 {
-    private Map<Integer, ProcessNode> processes;
+    private Map<String, ProcessNode> processes;
     private boolean allNodesTerminated;
-    private int rootID;
+    private String rootID;
 
     public ProcessController()
     {
-        processes = new LinkedHashMap<Integer, ProcessNode>(); //We want to quickly get to the process by using its id.
+        processes = new LinkedHashMap<String, ProcessNode>(); //We want to quickly get to the process by using its id.
         allNodesTerminated = false;
     }
 
@@ -82,7 +82,7 @@ public class ProcessController
                 if( line.length() != 0 )
                 {
                     if (!(line.charAt(0) == '#')) {
-                        if (stepCounter == 1)
+                        if (stepCounter == 1)  //Our data structure don't need to know number of nodes - we skipping processing this line
                             stepCounter++;
 
                             //Processing number of nodes line
@@ -91,15 +91,15 @@ public class ProcessController
                             orderedProcesses = new ArrayList<ProcessNode>();
 
                             //Reading second line - getting ids of processes and storing them to the HashMap
-                            for (String stringId : line.split(" ")) {
-                                ProcessNode processNode = new ProcessNode(Integer.parseInt(stringId));
-                                processes.put(Integer.parseInt(stringId), processNode);
+                            for (String id : line.split(" ")) {
+                                ProcessNode processNode = new ProcessNode(id);
+                                processes.put(id, processNode);
                                 orderedProcesses.add(processNode);
                             }
                             stepCounter++;
                         } else if (stepCounter == 3) {
                             //Reading thirdline line - getting id of root process
-                            rootID = Integer.parseInt(line);
+                            rootID = line;
                             ((BellmanFordStrategy) processes.get(rootID).getRoundStrategy()).setRoot(true);
                             stepCounter++;
                         } else if (stepCounter == 4) {
@@ -113,7 +113,7 @@ public class ProcessController
                             for (int i = 0; i < connectionWeights.length; i++) {
                                 if (Integer.parseInt(connectionWeights[i]) != -1) {
                                     processNode.addNeighbor(
-                                            orderedProcesses.get(i).getID(),
+                                            orderedProcesses.get(i).getId(),
                                             Integer.parseInt(connectionWeights[i]),
                                             orderedProcesses.get(i));
                                 }
@@ -147,16 +147,16 @@ public class ProcessController
         return true;
     }
 
-    public int getRootID() {
+    public String getRootID() {
     	return rootID;
     }
 
-    public Map<Integer, Integer> getNodeParentPairs() {
-    	Map<Integer, Integer> nodeParentPairs = new LinkedHashMap<Integer, Integer>();
+    public Map<String, String> getNodeParentPairs() {
+    	Map<String, String> nodeParentPairs = new LinkedHashMap<String, String>();
     	for(ProcessNode processNode : processes.values()) {
-    		if (processNode.getID() != rootID) {
+    		if (!processNode.getId().equals(rootID)) {
     			ProcessNode parent = ((BellmanFordStrategy) processNode.getRoundStrategy()).getParent();
-    			nodeParentPairs.put(processNode.getID(), parent.getID());
+    			nodeParentPairs.put(processNode.getId(), parent.getId());
     		}
     	}
     	return nodeParentPairs;
@@ -178,7 +178,7 @@ public class ProcessController
     {
         for (ProcessNode processNode : this.processes.values())
         {
-            System.out.println("Process ID: " + processNode.getID() + "; Distance: " + ((BellmanFordStrategy)processNode.getRoundStrategy()).getDist() + "; Shortest Path: " + processNode.describeShortestPath(processNode));
+            System.out.println("Process ID: " + processNode.getId() + "; Distance: " + ((BellmanFordStrategy)processNode.getRoundStrategy()).getDist() + "; Shortest Path: " + processNode.describeShortestPath(processNode));
         }
     }
 
