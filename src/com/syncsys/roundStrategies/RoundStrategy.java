@@ -1,6 +1,6 @@
 package com.syncsys.roundStrategies;
 
-import com.syncsys.ProcessNode;
+import com.syncsys.Links.AsyncLink;
 
 public interface RoundStrategy {
 	
@@ -20,4 +20,5 @@ public interface RoundStrategy {
 	void generateMessages();
 	void processMessages();
 	void execute();
+	void setRoot(boolean isRoot);
 }

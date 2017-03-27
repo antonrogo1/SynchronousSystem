@@ -8,6 +8,10 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.syncsys.Links.AsyncLink;
+import com.syncsys.Links.Link;
+import com.syncsys.MessageStrategies.MessageHandler;
+import com.syncsys.factories.FactoryHolder;
 import com.syncsys.roundMessages.RoundMessage;
 import com.syncsys.roundStrategies.BellmanFordStrategy;
 import com.syncsys.roundStrategies.RoundStrategy;
@@ -25,6 +29,10 @@ public class ProcessNode implements Runnable
     private BlockingQueue<RoundMessage> messages;   //Messages sent to this node
     private List<RoundMessage> messagesToProcess;	//Messages to process this round
     private RoundStrategy roundStrategy;            //Strategy to execute during a round
+
+
+
+    private MessageHandler messageHandler;
     
     public ProcessNode(String id)
     {
@@ -34,13 +42,15 @@ public class ProcessNode implements Runnable
         this.neighbors = new ConcurrentHashMap<String, ProcessNode>();
         this.messages = new LinkedBlockingQueue<RoundMessage>();
         this.messagesToProcess = new LinkedList<RoundMessage>();
-        
-        //set round to execute the Bellman Ford Algorithm
-        this.roundStrategy = new BellmanFordStrategy(this);
+        this.messageHandler = new MessageHandler();
+        this.roundStrategy = FactoryHolder.getFactory().newRoundStrategy(this);
     }
 
     public void addNeighbor(String id, int weight, ProcessNode neighbor)
     {
+        Link link = FactoryHolder.getFactory().newLink();
+        messageHandler.addIncomingLink(neighbor, link);
+        neighbor.getMessageHandler().addOutgoingLink(this, link);
         weights.put(id, weight);
         neighbors.put(id, neighbor);
     }
@@ -67,6 +77,7 @@ public class ProcessNode implements Runnable
 		}
     }
 
+    @Deprecated
     public void addMessage(RoundMessage message) {
         try {
             messages.put(message);
@@ -149,23 +160,31 @@ public class ProcessNode implements Runnable
 	    this.roundStrategy = roundStrategy;
     }
 
+    @Deprecated
 	public BlockingQueue<RoundMessage> getMessages() {
 	    return messages;
     }
 
+    @Deprecated
 	public void setMessages(BlockingQueue<RoundMessage> messages) {
 	    this.messages = messages;
     }
 
+    @Deprecated
     public List<RoundMessage> getMessagesToProcess() {
 	    return messagesToProcess;
     }
 
+    @Deprecated
 	public void setMessagesToProcess(List<RoundMessage> messagesToProcess) {
 	    this.messagesToProcess = messagesToProcess;
     }
 
-	@Override
+    public MessageHandler getMessageHandler() {
+        return messageHandler;
+    }
+
+    @Override
     public String toString() {
         return "Process{" +
                 "id=" + id +

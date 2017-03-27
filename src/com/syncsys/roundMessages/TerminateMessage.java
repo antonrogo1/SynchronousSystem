@@ -6,6 +6,7 @@ import com.syncsys.roundStrategies.RoundStrategy;
 
 public class TerminateMessage implements RoundMessage {
 	private String senderID;
+	private ProcessNode sender;
 
 	public TerminateMessage() {
 		setSenderID("-1");
@@ -25,5 +26,16 @@ public class TerminateMessage implements RoundMessage {
 
 	public void setSenderID(String senderID) {
 		this.senderID = senderID;
+	}
+
+	@Override
+	public void setSender(ProcessNode node) {
+		this.sender = node;
+		setSenderID(node.getId());
+	}
+
+	@Override
+	public ProcessNode getSender() {
+		return sender;
 	}
 }

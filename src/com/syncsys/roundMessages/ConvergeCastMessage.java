@@ -6,6 +6,7 @@ import com.syncsys.roundStrategies.RoundStrategy;
 
 public class ConvergeCastMessage implements RoundMessage {
 	private String senderID;
+	private ProcessNode sender;
 	private boolean child;			
 	
 	public ConvergeCastMessage() {
@@ -34,6 +35,16 @@ public class ConvergeCastMessage implements RoundMessage {
 
 	public void setSenderID(String senderID) {
 		this.senderID = senderID;
+	}
+	@Override
+	public void setSender(ProcessNode node) {
+		this.sender = node;
+		setSenderID(node.getId());
+	}
+
+	@Override
+	public ProcessNode getSender() {
+		return sender;
 	}
 
 	public boolean isChild() {

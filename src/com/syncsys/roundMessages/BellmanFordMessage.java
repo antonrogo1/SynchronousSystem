@@ -6,6 +6,7 @@ import com.syncsys.roundStrategies.RoundStrategy;
 
 public class BellmanFordMessage implements RoundMessage {
 	private String senderID;
+	private ProcessNode sender;
 	private int distance;
 	
 	public BellmanFordMessage() {
@@ -41,6 +42,17 @@ public class BellmanFordMessage implements RoundMessage {
 
 	public void setSenderID(String senderID) {
 		this.senderID = senderID;
+	}
+
+	@Override
+	public void setSender(ProcessNode node) {
+		this.sender = node;
+		setSenderID(node.getId());
+	}
+
+	@Override
+	public ProcessNode getSender() {
+		return sender;
 	}
 
 	public int getDistance() {

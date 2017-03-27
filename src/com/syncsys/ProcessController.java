@@ -1,5 +1,8 @@
 package com.syncsys;
 
+import com.syncsys.Links.AsyncLink;
+import com.syncsys.Links.Link;
+import com.syncsys.factories.FactoryHolder;
 import com.syncsys.roundStrategies.BellmanFordStrategy;
 
 import java.io.BufferedReader;
@@ -23,6 +26,7 @@ public class ProcessController
 
     public void runSingleRound()
     {
+        Link.incrementRound();
 
         for(ProcessNode processNode : processes.values())
         {
@@ -74,7 +78,7 @@ public class ProcessController
             StringBuilder stringBuilder = new StringBuilder();
             String line;
 
-            //Used to prerve order of ids - will be used when reading connectivity matrix
+            //Used to preserve order of ids - will be used when reading connectivity matrix
             ArrayList<ProcessNode> orderedProcesses = null;
 
             while ((line = bufferedReader.readLine()) != null) {

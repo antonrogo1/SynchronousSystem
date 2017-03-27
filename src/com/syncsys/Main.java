@@ -1,11 +1,14 @@
 package com.syncsys;
 
+import com.syncsys.factories.AsyncBFSFactory;
+import com.syncsys.factories.FactoryHolder;
+
 import java.util.Map;
 
 public class Main {
-
     public static void main(String[] args)
     {
+        FactoryHolder.setFactory(new AsyncBFSFactory());
         ProcessController processController = new ProcessController();
         processController.readInputFile("inputNew2.csv");
 
