@@ -17,6 +17,10 @@ public class AsyncBFSStrategy implements RoundStrategy {
     private int distance = Integer.MAX_VALUE;
     private ProcessNode node;
 
+    public AsyncBFSStrategy(){
+
+    }
+    
     public AsyncBFSStrategy(ProcessNode node){
         this.node = node;
     }
@@ -52,7 +56,15 @@ public class AsyncBFSStrategy implements RoundStrategy {
         return distance;
     }
 
-    public ProcessNode getNode() {
+    @Override
+    public ProcessNode getProcess() {
         return node;
     }
+
+    @Override
+    public void setProcess(ProcessNode process) {
+        this.node = process;
+    }
+
+
 }

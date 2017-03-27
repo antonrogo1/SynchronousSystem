@@ -16,7 +16,7 @@ public class AsyncBFSUpdateMessage implements RoundMessage {
     @Override
     public void processUsing(RoundStrategy strategy) {
         AsyncBFSStrategy bfsStrategy = (AsyncBFSStrategy) strategy;
-        ProcessNode recipient = bfsStrategy.getNode();
+        ProcessNode recipient = bfsStrategy.getProcess();
         if(dist < bfsStrategy.getDistance()){
             bfsStrategy.updateDistance(dist, sender);
         }
