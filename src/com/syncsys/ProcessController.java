@@ -39,55 +39,14 @@ public class ProcessController
 
     public void runAsyncBFS() throws InterruptedException {
 
-        while(true)
+        while(this.isAllNodesTerminated() == false )
         {
             for (AsyncLink asyncLink : this.links) {
                 asyncLink.advanceTime();
             }
-            Thread.sleep(50);
+            Thread.sleep(500);
         }
     }
-
-
-
-
-//    public void runSingleRound()
-//    {
-//        Link.incrementRound();
-//
-//        for(ProcessNode processNode : processes.values())
-//        {
-//            try {
-//	            processNode.resetRoundToStart();
-//            } catch (InterruptedException e) {
-//	            // TODO Auto-generated catch block
-//	            e.printStackTrace();
-//            }
-//        }
-//
-//        // Run each node, check to see if all nodes are terminated
-//        allNodesTerminated = true;
-//        for(ProcessNode processNode : processes.values())
-//        {
-//        	if (!processNode.isTerminating()) {
-//                Thread thread = new Thread(processNode);
-//                thread.start();
-//
-//                allNodesTerminated = false;
-//        	}
-//        }
-//
-//        while(this.isRoundComplete() ==false)
-//        {
-//            try {
-//                Thread.sleep(1000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        System.out.println("Round completed\n");
-//        return;
-//    }
 
 
     public void readInputFile(String inputFileName)
@@ -130,7 +89,8 @@ public class ProcessController
                         } else if (stepCounter == 3) {
                             //Reading third line line - getting id of root process
                             rootID = line;
-                            this.processes.get(rootID).setDistance(0); //meaning it is root.
+                            this.processes.get(rootID).setDistance(0);
+                            this.processes.get(rootID).setRoot(true);
                             stepCounter++;
                         } else if (stepCounter == 4) {
 			                /*
@@ -177,45 +137,47 @@ public class ProcessController
 
 
 
-    //Function to check if round complete
+	public boolean isAllNodesTerminated()
+    {
+        allNodesTerminated = true;
+        for(ProcessNode processNode : processes.values())
+        {
+        	if (processNode.isTerminating() == false)
+        	{
+                allNodesTerminated = false;
+                break;
+        	}
+        }
+
+        return allNodesTerminated;
+    }
+
+    public void printFinalResult()
+    {
+        for (ProcessNode processNode : this.processes.values())
+        {
+            System.out.println("Process ID: " + processNode.getId() + "; Distance: " + processNode.getDistance() + "; Shortest Path: " + this.describeShortestPath(processNode));
+        }
+    }
 
 
-//    public String getRootID() {
-//    	return rootID;
-//    }
+    //recursive method that return tuple (shortest Path description and total distance)
+    public String describeShortestPath(ProcessNode processNode)
+    {
+        String pathDescription =  processNode.getId() ;
 
-//    public Map<String, String> getNodeParentPairs() {
-//    	Map<String, String> nodeParentPairs = new LinkedHashMap<String, String>();
-//    	for(ProcessNode processNode : processes.values()) {
-//    		if (!processNode.getId().equals(rootID)) {
-//    			//ProcessNode parent = ((BellmanFordStrategy) processNode.getRoundStrategy()).getParent();
-//    			//nodeParentPairs.put(processNode.getId(), parent.getId());
-//    		}
-//    	}
-//    	return nodeParentPairs;
-//    }
-//
-//	public boolean isAllNodesTerminated() {
-//        allNodesTerminated = true;
-//        for(ProcessNode processNode : processes.values())
-//        {
-//        	if (!processNode.isTerminating()) {
-//                allNodesTerminated = false;
-//        	}
-//        }
-//
-//        return allNodesTerminated;
-//    }
-//
-//    public void printFinalResult()
-//    {
-//        for (ProcessNode processNode : this.processes.values())
-//        {
-//            //System.out.println("Process ID: " + processNode.getId() + "; Distance: " + ((BellmanFordStrategy)processNode.getRoundStrategy()).getDist() + "; Shortest Path: " + processNode.describeShortestPath(processNode));
-//        }
-//    }
-//
-//	public void setAllNodesTerminated(boolean allNodesTerminated) {
-//	    this.allNodesTerminated = allNodesTerminated;
-//    }
+        if(!(processNode.isRoot()) )
+        {
+            ProcessNode parentProcessNode = processNode.getParent();
+            String parentChain = this.describeShortestPath(parentProcessNode);
+            pathDescription+= " =>" + parentChain;
+
+            return pathDescription;
+        }
+        else
+        {
+            return processNode.getId();
+        }
+    }
+
 }

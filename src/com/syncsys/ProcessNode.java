@@ -16,7 +16,6 @@ public class ProcessNode implements Runnable
 {
     private String id;                              //Id of process
     private int distance;                           //best distance to the root process know so far
-    private volatile boolean terminating;           //true if terminating
 
     private Map<String, AsyncLink> links;   	   //Map of tuples: (id Of Neighbor process, link)
     private Map<String, ProcessNode> neighbors;    //Map of tuples: (id Of Neighbor process, neighbor)
@@ -34,10 +33,10 @@ public class ProcessNode implements Runnable
 
     private List<String> searchIDs;           //List of nodes to which this process send  TRASH
 
-
-    boolean needNotifyNeighbors;   //flag indicating that Process have need infomation on distance and need to notify Neighbors
-    boolean isConvergeCastMessageAlreadySent; //flag indicating that Process already send ConvergeCast Message
-
+    private boolean isRoot;
+    private boolean needNotifyNeighbors;              //flag indicating that Process have need infomation on distance and need to notify Neighbors
+    private boolean isConvergeCastMessageAlreadySent; //flag indicating that Process already send ConvergeCast Message
+    private boolean isTerminating;                    //flag indicating that process needs to terminate
 
 
     public ProcessNode(String id)
@@ -50,8 +49,10 @@ public class ProcessNode implements Runnable
         this.nonChildrenIds = new ArrayList<String>();
         this.convCastChildrenIds = new ArrayList<String>();
 
+        this.isRoot = false;
         this.needNotifyNeighbors = true;
-        isConvergeCastMessageAlreadySent = false;
+        this.isConvergeCastMessageAlreadySent = false;
+        this.isTerminating = false;
     }
 
 
@@ -64,7 +65,7 @@ public class ProcessNode implements Runnable
             for(Message message : arrivedMessages)
             {
                 if (message.getMessageType() == MessageType.EXPLORE) {
-                    processSearchMessage(message, asyncLink.getWeight());
+                    processExploreMessage(message, asyncLink.getWeight());
                 }
                 else if (message.getMessageType() == MessageType.PARENT_ACKNOWLEDGE)
                 {
@@ -77,17 +78,14 @@ public class ProcessNode implements Runnable
                 else if (message.getMessageType() == MessageType.CONVERGECAST) {
                     processConvergeCastMessage(message, asyncLink.getWeight());
                 }
-                else if (message.getMessageType() == MessageType.DONE) {
-
-                }
                 else if (message.getMessageType() == MessageType.TERMINATE) {
-
+                    processTerminateMessage(message);
                 }
             }
         }
     }
 
-    private void processSearchMessage(Message message, int linkWeight)
+    private void processExploreMessage(Message message, int linkWeight)
     {
         int newDistanceFromNeighboor = message.getDistance();
 
@@ -133,6 +131,8 @@ public class ProcessNode implements Runnable
             System.out.println("Process " + this.id + " received ack-message from child-process " + message.getSender().getId() + " acknowledging it as parent");
             this.childrenIds.add(message.getSender().getId());
         }
+        else
+            this.needNotifyNeighbors = true;
     }
 
     private void processNotParentAcknowldgeMessage(Message message)
@@ -145,6 +145,8 @@ public class ProcessNode implements Runnable
             if(childrenIds.contains(message.getSender().getId()))
                 childrenIds.remove(message.getSender().getId());
         }
+        else
+            this.needNotifyNeighbors = true;
     }
 
 
@@ -165,6 +167,22 @@ public class ProcessNode implements Runnable
             childrenIds.remove(message.getSender().getId());
             this.needNotifyNeighbors = true;
         }
+    }
+
+    private void processTerminateMessage(Message message)
+    {
+        System.out.println("Process " + this.id + " received TERMINATE message from parent process " + message.getSender().getId() );
+
+
+        //Sending Terminate Message to its children
+        for(String childId : this.childrenIds)
+        {
+            System.out.println("Process " + this.id + " sending TERMINATE message to the process " + childId);
+            Message messageToParentDone = new Message(MessageType.TERMINATE, this);
+            this.links.get(childId).getOutQueueFor(this).add(messageToParentDone);
+        }
+        this.isTerminating = true;
+
     }
 
 
@@ -200,33 +218,59 @@ public class ProcessNode implements Runnable
         }//if(this.needTotifyNeighbors)
 
 
+        //CONVERGECAST
         //IF all children and non-Children have been identified
         if ( this.isConvergeCastMessageAlreadySent == false &&
                 //AND All children and non children have been identified
             ((this.childrenIds.size() + this.nonChildrenIds.size() + 1) == this.links.size()) && // 1 is for parent
                 //AND if all chidren(if any) has sent their ConvergeCastMessages
-             this.childrenIds.size() == this.convCastChildrenIds.size() )
+             this.childrenIds.size() == this.convCastChildrenIds.size()
+                )
+        {
+
+            if( this.parent == null)
             {
-                System.out.println("Process " + this.id + " sending CONVERGECAST message with distance " + this.distance + " to the process " + parent.getId());
-                Message messageToParentDone = new Message(MessageType.CONVERGECAST, this);
-                messageToParentDone.setDistance(this.distance);
-                this.links.get(this.parent.getId()).getOutQueueFor(this).add(messageToParentDone);
-                this.isConvergeCastMessageAlreadySent=true;
+                System.out.println("Catched null parent for process " + this.id);
             }
+
+            System.out.println("Process " + this.id + " sending CONVERGECAST message with distance " + this.distance + " to the process " + this.parent.getId());
+            Message messageToParentDone = new Message(MessageType.CONVERGECAST, this);
+            messageToParentDone.setDistance(this.distance);
+            this.links.get(this.parent.getId()).getOutQueueFor(this).add(messageToParentDone);
+            this.isConvergeCastMessageAlreadySent=true;
+        }
+
+        //IF this is root and it received all ConvergeCast Messages from Children - Send TERMINATE message
+        if(this.isRoot && this.childrenIds.size() == this.convCastChildrenIds.size() && (this.childrenIds.size() + this.nonChildrenIds.size() == this.links.size() ))
+        {
+            for(String childId : this.childrenIds)
+            {
+                System.out.println("Process " + this.id + " sending TERMINATE message to the process " + childId);
+                Message messageToParentDone = new Message(MessageType.TERMINATE, this);
+                this.links.get(childId).getOutQueueFor(this).add(messageToParentDone);
+            }
+            this.isTerminating = true;
+        }
+
+
     }
 
     @Override
     public void run()
     {
-        while(true) {
+
+        while(this.isTerminating == false)
+        {
             checkAndProcessIncomingMessages();
             sendMessages();
-            try {
+            try
+            {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+        System.out.println("Process " + this.id + " TERMINATED");
     }
 
 
@@ -252,13 +296,6 @@ public class ProcessNode implements Runnable
         this.distance = distance;
     }
 
-    public boolean isTerminating() {
-        return terminating;
-    }
-
-    public void setTerminating(boolean terminating) {
-        this.terminating = terminating;
-    }
 
     public Map<String, AsyncLink> getLinks() {
         return links;
@@ -322,6 +359,46 @@ public class ProcessNode implements Runnable
 
     public void setNeedNotifyNeighbors(boolean needNotifyNeighbors) {
         this.needNotifyNeighbors = needNotifyNeighbors;
+    }
+
+    public List<String> getNonChildrenIds() {
+        return nonChildrenIds;
+    }
+
+    public void setNonChildrenIds(List<String> nonChildrenIds) {
+        this.nonChildrenIds = nonChildrenIds;
+    }
+
+    public List<String> getConvCastChildrenIds() {
+        return convCastChildrenIds;
+    }
+
+    public void setConvCastChildrenIds(List<String> convCastChildrenIds) {
+        this.convCastChildrenIds = convCastChildrenIds;
+    }
+
+    public boolean isConvergeCastMessageAlreadySent() {
+        return isConvergeCastMessageAlreadySent;
+    }
+
+    public void setConvergeCastMessageAlreadySent(boolean convergeCastMessageAlreadySent) {
+        isConvergeCastMessageAlreadySent = convergeCastMessageAlreadySent;
+    }
+
+    public boolean isRoot() {
+        return isRoot;
+    }
+
+    public void setRoot(boolean root) {
+        isRoot = root;
+    }
+
+    public boolean isTerminating() {
+        return isTerminating;
+    }
+
+    public void setTerminating(boolean terminating) {
+        isTerminating = terminating;
     }
 
     /**
