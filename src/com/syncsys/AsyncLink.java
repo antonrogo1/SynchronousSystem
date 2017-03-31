@@ -1,8 +1,7 @@
-package com.syncsys.Links;
+package com.syncsys;
 
 import com.syncsys.ProcessNode;
-import com.syncsys.roundMessages.Message;
-import com.syncsys.roundMessages.oldCrap.RoundMessage;
+import com.syncsys.Message;
 
 import java.util.ArrayList;
 import java.util.List;

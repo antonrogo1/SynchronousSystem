@@ -1,7 +1,6 @@
-package com.syncsys.roundMessages;
+package com.syncsys;
 
-import com.syncsys.ProcessNode;
-import com.syncsys.roundMessages.enums.MessageType;
+import com.syncsys.enums.MessageType;
 
 /**
  * Created by anton on 3/30/2017.

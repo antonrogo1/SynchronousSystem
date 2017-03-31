@@ -6,10 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-import com.syncsys.Links.AsyncLink;
-
-import com.syncsys.roundMessages.Message;
-import com.syncsys.roundMessages.enums.MessageType;
+import com.syncsys.enums.MessageType;
 
 
 /**
@@ -26,9 +23,14 @@ public class ProcessNode implements Runnable
 
     private ProcessNode parent;
     private List<String> childrenIds;         //List of Children - nodes that acknowldged this node as Parent
+    private List<String> nonChildrenIds;      //List of NonChildren - nodes that acknowldged this node as Not-Parent
+
     private List<String> doneChildIDs;        //List of Children nodes that identified them as Complete (them and their children found Shortest Path)
-    private List<String> searchIDs;           //List of nodes to which this process send
+
     private List<String> responseIDs;
+
+    private List<String> searchIDs;           //List of nodes to which this process send  TRASH
+
 
     boolean needTotifyNeighbors;   //falg indicating that Process have need infomation on distance and need to notify Neighbors
 
@@ -40,7 +42,7 @@ public class ProcessNode implements Runnable
         this.links = new ConcurrentHashMap<String, AsyncLink>();
         this.neighbors = new ConcurrentHashMap<String, ProcessNode>();
         this.childrenIds = new ArrayList<String >();
-
+        this.nonChildrenIds = new ArrayList<String>();
 
         this.needTotifyNeighbors = true;
     }
@@ -60,6 +62,10 @@ public class ProcessNode implements Runnable
                 else if (message.getMessageType() == MessageType.PARENT_ACKNOWLEDGE)
                 {
                     processParentAcknowldgeMessage(message);
+                }
+                else if (message.getMessageType() == MessageType.NOTPARENT_ACKNOWLEDGE)
+                {
+                    processNotParentAcknowldgeMessage(message);
                 }
                 else if (message.getMessageType() == MessageType.CONVERGECAST) {
 
@@ -91,19 +97,44 @@ public class ProcessNode implements Runnable
 
             //Sending message to parent acknowledging him as parent
             Message messageToParent = new Message(MessageType.PARENT_ACKNOWLEDGE, this);
+
+            //We returning the distance that we got from original sender(parent), So parent know which latest version of distance this node got,
+            //there could be a case that parent got better distance, so it need to know  to resend latest distance.
+            messageToParent.setDistance(newDistanceFromNeighboor);
+
             this.links.get(parent.getId()).getOutQueueFor(this).add(messageToParent);  //getting async link to parent and adding ack message
 
+            //Non-Children may become children in the future
+            nonChildrenIds = new ArrayList<String>();
             this.needTotifyNeighbors = true;
+        }
+        else // returning ack-message to original sender so it knows its message was processed
+        {
+            Message messageToNonParent = new Message(MessageType.NOTPARENT_ACKNOWLEDGE, this);
+
+            //We returning the distance that we got from original sender(Non-parent), So non-parent know which latest version of distance this node got,
+            //there could be a case that non-parent got better distance, so it need to know  to resend latest distance.
+            messageToNonParent.setDistance(newDistanceFromNeighboor);
+
+            this.links.get(message.getSender().getId()).getOutQueueFor(this).add(messageToNonParent);  //getting async link to non-parent and adding ack message (Not-Parent)
         }
     }
 
     private void processParentAcknowldgeMessage(Message message)
     {
-        System.out.println("Process " + this.id + " received message from child " + message.getSender().getId() + " acknowledgeing it as parent");
-        this.childrenIds.add(message.getSender().getId());
+        if(message.getDistance() == this.distance) {
+            System.out.println("Process " + this.id + " received ack-message from child-process" + message.getSender().getId() + " acknowledging it as parent");
+            this.childrenIds.add(message.getSender().getId());
+        }
     }
 
-
+    private void processNotParentAcknowldgeMessage(Message message)
+    {
+        if(message.getDistance() == this.distance) {
+            System.out.println("Process " + this.id + " received ack-message from neighbor process " + message.getSender().getId() + " rejecting it as parent");
+            this.nonChildrenIds.add(message.getSender().getId());
+        }
+    }
 
     public void sendMessages()
     {
@@ -147,62 +178,6 @@ public class ProcessNode implements Runnable
             }
         }
     }
-
-
-
-
-
-
-    //Single Round (also see function below)
-//    @Override
-//    public void run()
-//    {
-//	    roundStrategy.execute();
-//        roundCompleted = true;
-//    }
-//
-//    //before each round thread should complete this step.
-//    public void resetRoundToStart() throws InterruptedException
-//    {
-//        roundCompleted = false;
-//
-//        // Allow messages to only be processed at the start of the next round
-//        messagesToProcess.clear();
-//        int numMessages = messages.size();
-//		for (int i = 0; i < numMessages; i++) {
-//			RoundMessage message = messages.take();
-//			messagesToProcess.add(message);
-//		}
-//    }
-
-//    @Deprecated
-//    public void addMessage(RoundMessage message) {
-//        try {
-//            messages.put(message);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-
-//    //recursive method that return tuple (shortest Path description and total distance)
-//    public String describeShortestPath(ProcessNode processNode)
-//    {
-//        String pathDescription =  processNode.getId() ;
-//
-//        if(!((BellmanFordStrategy)processNode.getRoundStrategy()).isRoot())
-//        {
-//            ProcessNode parentProcessNode = ((BellmanFordStrategy)processNode.getRoundStrategy()).getParent();
-//            String parentChain = processNode.describeShortestPath(parentProcessNode);
-//            pathDescription+= " =>" + parentChain;
-//
-//            return pathDescription;
-//        }
-//        else
-//        {
-//            return processNode.getId();
-//        }
-//    }
 
 
 
