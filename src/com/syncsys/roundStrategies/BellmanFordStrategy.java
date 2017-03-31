@@ -103,13 +103,13 @@ public class BellmanFordStrategy implements RoundStrategy {
 		searchIDs.clear();
 		responseIDs.clear();
 		
-		for (RoundMessage message : process.getMessagesToProcess()) {
-			
-			// Only the message knows how it should be processed
-			// Thus we give control to the message for processing
-			
-			message.processUsing(this);
-		}
+//		for (RoundMessage message : process.getMessagesToProcess()) {
+//
+//			// Only the message knows how it should be processed
+//			// Thus we give control to the message for processing
+//
+//			message.processUsing(this);
+//		}
 		
 		if (null != parent && allChildrenDone()) {
 			done = true;

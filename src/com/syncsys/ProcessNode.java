@@ -1,17 +1,16 @@
 package com.syncsys;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+
 
 import com.syncsys.Links.AsyncLink;
-import com.syncsys.MessageStrategies.MessageHandler;
-import com.syncsys.factories.FactoryHolder;
+
 import com.syncsys.roundMessages.Message;
-import com.syncsys.roundMessages.oldCrap.RoundMessage;
+import com.syncsys.roundMessages.enums.MessageType;
+
 
 /**
  * Created by anton on 2/9/2017.
@@ -26,12 +25,12 @@ public class ProcessNode implements Runnable
     private Map<String, ProcessNode> neighbors;    //Map of tuples: (id Of Neighbor process, neighbor)
 
     private ProcessNode parent;
-    private List<String> childIDs;       //List of Children
-    private List<String> doneChildIDs;   //List of Children nodes that identified them as Complete (them and their children found Shortest Path)
-    private List<String> searchIDs;      //List of nodes to which this process send
+    private List<String> childrenIds;         //List of Children - nodes that acknowldged this node as Parent
+    private List<String> doneChildIDs;        //List of Children nodes that identified them as Complete (them and their children found Shortest Path)
+    private List<String> searchIDs;           //List of nodes to which this process send
     private List<String> responseIDs;
 
-    boolean needTotifyNeighbors;
+    boolean needTotifyNeighbors;   //falg indicating that Process have need infomation on distance and need to notify Neighbors
 
 
     public ProcessNode(String id)
@@ -40,44 +39,119 @@ public class ProcessNode implements Runnable
         this.distance = Integer.MAX_VALUE;
         this.links = new ConcurrentHashMap<String, AsyncLink>();
         this.neighbors = new ConcurrentHashMap<String, ProcessNode>();
+        this.childrenIds = new ArrayList<String >();
+
+
+        this.needTotifyNeighbors = true;
     }
 
-    public void processing()
-    {
-        for (AsyncLink asyncLink : this.links.values())
-        {
 
-
-            asyncLink.getOutQueueFor(this);
-        }
-    }
-
-    public checkAndProcessIncomingMessages()
+    public void checkAndProcessIncomingMessages()
     {
 
         for (AsyncLink asyncLink : this.links.values())
         {
-            Message message = asyncLink.getInQueueFor(this).peek();
-        }
+            List<Message> arrivedMessages = asyncLink.getArrivedMessagesFor(this);
+            for(Message message : arrivedMessages)
+            {
+                if (message.getMessageType() == MessageType.EXPLORE) {
+                    processSearchMessage(message, asyncLink.getWeight());
+                }
+                else if (message.getMessageType() == MessageType.PARENT_ACKNOWLEDGE)
+                {
+                    processParentAcknowldgeMessage(message);
+                }
+                else if (message.getMessageType() == MessageType.CONVERGECAST) {
 
+                }
+                else if (message.getMessageType() == MessageType.DONE) {
+
+                }
+                else if (message.getMessageType() == MessageType.TERMINATE) {
+
+                }
+            }
+        }
+    }
+
+    private void processSearchMessage(Message message, int linkWeight)
+    {
+        int newDistanceFromNeighboor = message.getDistance();
+
+        //If node received EXPLORE message from child - it means child got a new parent (Child is no longer a child)
+        if(childrenIds.contains(message.getSender().getId()))
+            childrenIds.remove(message.getSender().getId());
+
+        if(newDistanceFromNeighboor != Integer.MAX_VALUE && newDistanceFromNeighboor + linkWeight < this.distance )
+        {
+            this.distance = newDistanceFromNeighboor + linkWeight;
+            this.parent = message.getSender();
+
+            System.out.println("Process " + this.id + " now have parent " + parent.getId() + " and distance " + this.distance);
+
+            //Sending message to parent acknowledging him as parent
+            Message messageToParent = new Message(MessageType.PARENT_ACKNOWLEDGE, this);
+            this.links.get(parent.getId()).getOutQueueFor(this).add(messageToParent);  //getting async link to parent and adding ack message
+
+            this.needTotifyNeighbors = true;
+        }
+    }
+
+    private void processParentAcknowldgeMessage(Message message)
+    {
+        System.out.println("Process " + this.id + " received message from child " + message.getSender().getId() + " acknowledgeing it as parent");
+        this.childrenIds.add(message.getSender().getId());
     }
 
 
 
+    public void sendMessages()
+    {
+
+        if(this.needTotifyNeighbors)
+        {
+            //Sending EXPLORE message to every neighbor Except parent
+            for(String neighborId : this.links.keySet())
+            {
+                if(parent == null)
+                {
+                    System.out.println("Process " + this.id + " sending EXPLORE message with distance " + this.distance + " to the process " + neighborId);
+                    Message messageToNeighbors = new Message(MessageType.EXPLORE, this);
+                    messageToNeighbors.setDistance(this.distance);
+                    this.links.get(neighborId).getOutQueueFor(this).add(messageToNeighbors);
+                }
+                else
+                    {
+                    if (!neighborId.equals(parent.getId())) {
+                        System.out.println("Process " + this.id + " sending EXPLORE message with distance " + this.distance + " to the process " + neighborId);
+                        Message messageToNeighbors = new Message(MessageType.EXPLORE, this);
+                        messageToNeighbors.setDistance(this.distance);
+                        this.links.get(neighborId).getOutQueueFor(this).add(messageToNeighbors);  //getting async link to parent and adding explore message
+                    }
+                }
+            }
+            this.needTotifyNeighbors = false;
+        }
+    }
 
     @Override
     public void run()
     {
-        //execution
+        while(true) {
+            checkAndProcessIncomingMessages();
+            sendMessages();
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 
 
 
-    public void addNeighbor(AsyncLink asyncLink, ProcessNode neighbor)
-    {
 
-    }
 
     //Single Round (also see function below)
 //    @Override
@@ -137,7 +211,6 @@ public class ProcessNode implements Runnable
      * GETTERS / SETTERS
      */
 
-
     public String getId() {
         return id;
     }
@@ -162,6 +235,13 @@ public class ProcessNode implements Runnable
         this.terminating = terminating;
     }
 
+    public Map<String, AsyncLink> getLinks() {
+        return links;
+    }
+
+    public void setLinks(Map<String, AsyncLink> links) {
+        this.links = links;
+    }
 
     public Map<String, ProcessNode> getNeighbors() {
         return neighbors;
@@ -171,39 +251,53 @@ public class ProcessNode implements Runnable
         this.neighbors = neighbors;
     }
 
-    public BlockingQueue<RoundMessage> getMessages() {
-        return messages;
+    public ProcessNode getParent() {
+        return parent;
     }
 
-    public void setMessages(BlockingQueue<RoundMessage> messages) {
-        this.messages = messages;
+    public void setParent(ProcessNode parent) {
+        this.parent = parent;
     }
 
-    public List<RoundMessage> getMessagesToProcess() {
-        return messagesToProcess;
+    public List<String> getChildrenIds() {
+        return childrenIds;
     }
 
-    public void setMessagesToProcess(List<RoundMessage> messagesToProcess) {
-        this.messagesToProcess = messagesToProcess;
+    public void setChildrenIds(List<String> childrenIds) {
+        this.childrenIds = childrenIds;
     }
 
-    public MessageHandler getMessageHandler() {
-        return messageHandler;
+    public List<String> getDoneChildIDs() {
+        return doneChildIDs;
     }
 
-    public void setMessageHandler(MessageHandler messageHandler) {
-        this.messageHandler = messageHandler;
+    public void setDoneChildIDs(List<String> doneChildIDs) {
+        this.doneChildIDs = doneChildIDs;
     }
 
-    public Map<String, AsyncLink> getLinks() {
-        return links;
+    public List<String> getSearchIDs() {
+        return searchIDs;
     }
 
-    public void setLinks(Map<String, AsyncLink> links) {
-        this.links = links;
+    public void setSearchIDs(List<String> searchIDs) {
+        this.searchIDs = searchIDs;
     }
 
+    public List<String> getResponseIDs() {
+        return responseIDs;
+    }
 
+    public void setResponseIDs(List<String> responseIDs) {
+        this.responseIDs = responseIDs;
+    }
+
+    public boolean isNeedTotifyNeighbors() {
+        return needTotifyNeighbors;
+    }
+
+    public void setNeedTotifyNeighbors(boolean needTotifyNeighbors) {
+        this.needTotifyNeighbors = needTotifyNeighbors;
+    }
 
     /**
      * Equals and Hash

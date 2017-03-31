@@ -31,12 +31,23 @@ public class ProcessController
     }
 
 
-    public void advanceTime()
-    {
-        for(ProcessNode processNode : processes.values())
-        {
+    public void startProcesses() throws InterruptedException {
+
+        for (ProcessNode processNode : processes.values()) {
             Thread thread = new Thread(processNode);
             thread.start();
+        }
+
+    }
+
+    public void runAsyncBFS() throws InterruptedException {
+
+        while(true)
+        {
+            for (AsyncLink asyncLink : this.links) {
+                asyncLink.advanceTime();
+            }
+            Thread.sleep(50);
         }
     }
 

@@ -4,6 +4,7 @@ import com.syncsys.ProcessNode;
 import com.syncsys.roundMessages.Message;
 import com.syncsys.roundMessages.oldCrap.RoundMessage;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -40,7 +41,11 @@ public class AsyncLink implements Runnable
     {
         for(Message m : queueAtoB)
         {
-            m.getTransmissionStartTime();
+            m.setTransmisissionDurationSoFar( m.getTransmisissionDurationSoFar()+1);
+        }
+        for(Message m : queueBtoA)
+        {
+            m.setTransmisissionDurationSoFar( m.getTransmisissionDurationSoFar()+1);
         }
     }
 
@@ -71,13 +76,36 @@ public class AsyncLink implements Runnable
 
     public List<Message> getArrivedMessagesFor(ProcessNode p)
     {
-        this.getInQueueFor(p).peek();
+        List<Message> result = new ArrayList<Message>();
+        boolean haveMoreArrivedMessages = true;
+        while(haveMoreArrivedMessages)
+        {
+            Message message = this.getInQueueFor(p).peek();
+            if(message!= null)
+            {
+                if(message.isMessageArrived())
+                {
+                    message = this.getInQueueFor(p).remove();
+                    result.add(message);
+                }
+                else
+                    break;   //Not checking other messages in a queue if prior one still not arrived
+            }
+            else
+                break; //no meessages in the queue
+
+        }
+        return result;
     }
+
+
+
 
 
     @Override
     public void run()
     {
+
         try {
             sleep(100);
         } catch (InterruptedException e) {
