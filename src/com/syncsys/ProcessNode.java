@@ -1,6 +1,5 @@
 package com.syncsys;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -9,107 +8,134 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.syncsys.Links.AsyncLink;
-import com.syncsys.Links.Link;
 import com.syncsys.MessageStrategies.MessageHandler;
 import com.syncsys.factories.FactoryHolder;
-import com.syncsys.roundMessages.RoundMessage;
-import com.syncsys.roundStrategies.BellmanFordStrategy;
-import com.syncsys.roundStrategies.RoundStrategy;
+import com.syncsys.roundMessages.Message;
+import com.syncsys.roundMessages.oldCrap.RoundMessage;
 
 /**
  * Created by anton on 2/9/2017.
  */
 public class ProcessNode implements Runnable
 {
-    private String id;                                 //Id of process
-    private volatile boolean roundCompleted;		//indicates to the parent that Thread finished its round
+    private String id;                              //Id of process
+    private int distance;                           //best distance to the root process know so far
     private volatile boolean terminating;           //true if terminating
-    private Map<String, Integer> weights;   	 	//Map of tuples: (id Of Neighbor process, weight)
+
+    private Map<String, AsyncLink> links;   	   //Map of tuples: (id Of Neighbor process, link)
     private Map<String, ProcessNode> neighbors;    //Map of tuples: (id Of Neighbor process, neighbor)
-    private BlockingQueue<RoundMessage> messages;   //Messages sent to this node
-    private List<RoundMessage> messagesToProcess;	//Messages to process this round
-    private RoundStrategy roundStrategy;            //Strategy to execute during a round
+
+    private ProcessNode parent;
+    private List<String> childIDs;       //List of Children
+    private List<String> doneChildIDs;   //List of Children nodes that identified them as Complete (them and their children found Shortest Path)
+    private List<String> searchIDs;      //List of nodes to which this process send
+    private List<String> responseIDs;
+
+    boolean needTotifyNeighbors;
 
 
-
-    private MessageHandler messageHandler;
-    
     public ProcessNode(String id)
     {
         this.id = id;
-        this.roundCompleted = false;
-        this.weights = new ConcurrentHashMap<String, Integer>();
+        this.distance = Integer.MAX_VALUE;
+        this.links = new ConcurrentHashMap<String, AsyncLink>();
         this.neighbors = new ConcurrentHashMap<String, ProcessNode>();
-        this.messages = new LinkedBlockingQueue<RoundMessage>();
-        this.messagesToProcess = new LinkedList<RoundMessage>();
-        this.messageHandler = new MessageHandler();
-        this.roundStrategy = FactoryHolder.getFactory().newRoundStrategy(this);
     }
 
-    public void addNeighbor(String id, int weight, ProcessNode neighbor)
+    public void processing()
     {
-        Link link = FactoryHolder.getFactory().newLink();
-        messageHandler.addIncomingLink(neighbor, link);
-        neighbor.getMessageHandler().addOutgoingLink(this, link);
-        weights.put(id, weight);
-        neighbors.put(id, neighbor);
+        for (AsyncLink asyncLink : this.links.values())
+        {
+
+
+            asyncLink.getOutQueueFor(this);
+        }
     }
 
-    //Single Round (also see function below)
+    public checkAndProcessIncomingMessages()
+    {
+
+        for (AsyncLink asyncLink : this.links.values())
+        {
+            Message message = asyncLink.getInQueueFor(this).peek();
+        }
+
+    }
+
+
+
+
     @Override
     public void run()
     {
-	    roundStrategy.execute();
-        roundCompleted = true;
+        //execution
     }
 
-    //before each round thread should complete this step.
-    public void resetRoundToStart() throws InterruptedException
+
+
+
+    public void addNeighbor(AsyncLink asyncLink, ProcessNode neighbor)
     {
-        roundCompleted = false;
-        
-        // Allow messages to only be processed at the start of the next round
-        messagesToProcess.clear();
-        int numMessages = messages.size();
-		for (int i = 0; i < numMessages; i++) {
-			RoundMessage message = messages.take();
-			messagesToProcess.add(message);
-		}
+
     }
 
-    @Deprecated
-    public void addMessage(RoundMessage message) {
-        try {
-            messages.put(message);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
+    //Single Round (also see function below)
+//    @Override
+//    public void run()
+//    {
+//	    roundStrategy.execute();
+//        roundCompleted = true;
+//    }
+//
+//    //before each round thread should complete this step.
+//    public void resetRoundToStart() throws InterruptedException
+//    {
+//        roundCompleted = false;
+//
+//        // Allow messages to only be processed at the start of the next round
+//        messagesToProcess.clear();
+//        int numMessages = messages.size();
+//		for (int i = 0; i < numMessages; i++) {
+//			RoundMessage message = messages.take();
+//			messagesToProcess.add(message);
+//		}
+//    }
+
+//    @Deprecated
+//    public void addMessage(RoundMessage message) {
+//        try {
+//            messages.put(message);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
 
-    //recursive method that return tuple (shortest Path description and total distance)
-    public String describeShortestPath(ProcessNode processNode)
-    {
-        String pathDescription =  processNode.getId() ;
-
-        if(!((BellmanFordStrategy)processNode.getRoundStrategy()).isRoot())
-        {
-            ProcessNode parentProcessNode = ((BellmanFordStrategy)processNode.getRoundStrategy()).getParent();
-            String parentChain = processNode.describeShortestPath(parentProcessNode);
-            pathDescription+= " =>" + parentChain;
-
-            return pathDescription;
-        }
-        else
-        {
-            return processNode.getId();
-        }
-    }
-
-
+//    //recursive method that return tuple (shortest Path description and total distance)
+//    public String describeShortestPath(ProcessNode processNode)
+//    {
+//        String pathDescription =  processNode.getId() ;
+//
+//        if(!((BellmanFordStrategy)processNode.getRoundStrategy()).isRoot())
+//        {
+//            ProcessNode parentProcessNode = ((BellmanFordStrategy)processNode.getRoundStrategy()).getParent();
+//            String parentChain = processNode.describeShortestPath(parentProcessNode);
+//            pathDescription+= " =>" + parentChain;
+//
+//            return pathDescription;
+//        }
+//        else
+//        {
+//            return processNode.getId();
+//        }
+//    }
 
 
-    //Getters/Setters
+
+
+    /**
+     * GETTERS / SETTERS
+     */
 
 
     public String getId() {
@@ -120,13 +146,22 @@ public class ProcessNode implements Runnable
         this.id = id;
     }
 
-    public Map<String, Integer> getWeights() {
-        return weights;
+    public int getDistance() {
+        return distance;
     }
 
-    public void setWeights(Map<String, Integer> weights) {
-        this.weights = weights;
+    public void setDistance(int distance) {
+        this.distance = distance;
     }
+
+    public boolean isTerminating() {
+        return terminating;
+    }
+
+    public void setTerminating(boolean terminating) {
+        this.terminating = terminating;
+    }
+
 
     public Map<String, ProcessNode> getNeighbors() {
         return neighbors;
@@ -136,60 +171,56 @@ public class ProcessNode implements Runnable
         this.neighbors = neighbors;
     }
 
-    public boolean isRoundCompleted() {
-        return roundCompleted;
+    public BlockingQueue<RoundMessage> getMessages() {
+        return messages;
     }
 
-    public void setRoundCompleted(boolean roundCompleted) {
-        this.roundCompleted = roundCompleted;
+    public void setMessages(BlockingQueue<RoundMessage> messages) {
+        this.messages = messages;
     }
 
-	public boolean isTerminating() {
-	    return terminating;
-    }
-
-	public void setTerminating(boolean terminating) {
-	    this.terminating = terminating;
-    }
-
-	public RoundStrategy getRoundStrategy() {
-	    return roundStrategy;
-    }
-
-	public void setRoundStrategy(RoundStrategy roundStrategy) {
-	    this.roundStrategy = roundStrategy;
-    }
-
-    @Deprecated
-	public BlockingQueue<RoundMessage> getMessages() {
-	    return messages;
-    }
-
-    @Deprecated
-	public void setMessages(BlockingQueue<RoundMessage> messages) {
-	    this.messages = messages;
-    }
-
-    @Deprecated
     public List<RoundMessage> getMessagesToProcess() {
-	    return messagesToProcess;
+        return messagesToProcess;
     }
 
-    @Deprecated
-	public void setMessagesToProcess(List<RoundMessage> messagesToProcess) {
-	    this.messagesToProcess = messagesToProcess;
+    public void setMessagesToProcess(List<RoundMessage> messagesToProcess) {
+        this.messagesToProcess = messagesToProcess;
     }
 
     public MessageHandler getMessageHandler() {
         return messageHandler;
     }
 
-    @Override
-    public String toString() {
-        return "Process{" +
-                "id=" + id +
-                ", neighbor weights=" + weights +
-                '}';
+    public void setMessageHandler(MessageHandler messageHandler) {
+        this.messageHandler = messageHandler;
     }
 
+    public Map<String, AsyncLink> getLinks() {
+        return links;
+    }
+
+    public void setLinks(Map<String, AsyncLink> links) {
+        this.links = links;
+    }
+
+
+
+    /**
+     * Equals and Hash
+     */
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ProcessNode that = (ProcessNode) o;
+
+        return id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
 }

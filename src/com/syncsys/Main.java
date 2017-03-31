@@ -15,7 +15,7 @@ public class Main {
         System.out.println("Finished reading InputFile");
 
         while (!processController.isAllNodesTerminated()) {
-            processController.runSingleRound();
+            //processController.runSingleRound();
         }
 
         System.out.println("All Nodes Terminated\n");

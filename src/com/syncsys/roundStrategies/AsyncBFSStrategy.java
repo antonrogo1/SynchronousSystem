@@ -1,8 +1,7 @@
 package com.syncsys.roundStrategies;
 
-import com.syncsys.Links.AsyncLink;
 import com.syncsys.ProcessNode;
-import com.syncsys.roundMessages.RoundMessage;
+import com.syncsys.roundMessages.oldCrap.RoundMessage;
 
 import java.util.List;
 
@@ -35,7 +34,7 @@ public class AsyncBFSStrategy implements RoundStrategy {
 
     @Override
     public void processMessages() {
-        List<RoundMessage> list = node.getMessageHandler().getMessages();
+        //List<RoundMessage> list = node.getMessageHandler().getMessages();
     }
 
     @Override

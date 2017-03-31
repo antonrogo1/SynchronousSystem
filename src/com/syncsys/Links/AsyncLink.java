@@ -1,65 +1,189 @@
 package com.syncsys.Links;
 
-import com.syncsys.roundMessages.RoundMessage;
+import com.syncsys.ProcessNode;
+import com.syncsys.roundMessages.Message;
+import com.syncsys.roundMessages.oldCrap.RoundMessage;
 
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import static java.lang.Thread.sleep;
 
 /**
  * An AsyncLink represents the link between two nodes. Specifically, it represents one direction
  * of a bidirectional link. It will delay a message for a random amount of time. It will still
  * preserve FIFO order.
  */
-public class AsyncLink extends Link{
-    private Queue<MessageContainer> queue = new ConcurrentLinkedQueue<MessageContainer>();
+public class AsyncLink implements Runnable
+{
+    private int weight;
+
+    private ProcessNode aProcess;
+    private ProcessNode bProcess;
+
+    private Queue<Message> queueAtoB;   // One Way from A to B
+    private Queue<Message> queueBtoA;   // Back
 
 
-    public void sendMessage(RoundMessage msg){
-        queue.add(new MessageContainer(AsyncLink.getRound(), msg));
-    }
-
-    public boolean hasAvailableMessage(){
-        if(queue.isEmpty()){
-            return false;
-        }
-        MessageContainer top = queue.peek();
-        return top.shouldPop();
-    }
-
-    public RoundMessage receiveMessage(){
-        if(!hasAvailableMessage()){
-            return null;
-        }
-        return queue.remove().getMessage();
+    public AsyncLink(ProcessNode a, ProcessNode b, int weight)
+    {
+        this.aProcess=a;
+        this.bProcess=b;
+        this.weight = weight;
+        this.queueAtoB = new ConcurrentLinkedQueue<Message>();
+        this.queueBtoA = new ConcurrentLinkedQueue<Message>();
     }
 
 
-
-    class MessageContainer{
-        long entryRound;
-        int delay;
-        RoundMessage message;
-
-        MessageContainer(long entryRound, RoundMessage message){
-            this.entryRound = entryRound;
-            this.message = message;
-            this.delay = randomDelay();
-        }
-
-        public boolean shouldPop(){
-            long round = Link.getRound();
-            return (round >= (entryRound+delay));
-
-        }
-
-        public RoundMessage getMessage(){
-            return this.message;
-        }
-
-        private int randomDelay(){
-            final int MIN_BOUND = 1;
-            final int MAX_BOUND = 19;
-            return (int) ((Math.random()* (MAX_BOUND-MIN_BOUND)) + MIN_BOUND);
+    public void advanceTime()
+    {
+        for(Message m : queueAtoB)
+        {
+            m.getTransmissionStartTime();
         }
     }
+
+
+    //Returns link's queue incoming to Process p
+    public Queue<Message> getInQueueFor(ProcessNode p)
+    {
+        Queue<Message> result;
+        if(p.equals(aProcess))
+            result = getQueueBtoA();
+        else
+            result = getQueueAtoB();
+
+        return result;
+    }
+
+    //Returns link's queue outgoing from Process p
+    public Queue<Message> getOutQueueFor(ProcessNode p)
+    {
+        Queue<Message> result;
+        if(p.equals(aProcess))
+            result = getQueueAtoB();
+        else
+            result = getQueueBtoA();
+
+        return result;
+    }
+
+    public List<Message> getArrivedMessagesFor(ProcessNode p)
+    {
+        this.getInQueueFor(p).peek();
+    }
+
+
+    @Override
+    public void run()
+    {
+        try {
+            sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    /**
+     * GETTERS / SETTERS
+     */
+
+    public int getWeight() {
+        return weight;
+    }
+
+    public void setWeight(int weight) {
+        this.weight = weight;
+    }
+
+    public ProcessNode getaProcess() {
+        return aProcess;
+    }
+
+    public void setaProcess(ProcessNode aProcess) {
+        this.aProcess = aProcess;
+    }
+
+    public ProcessNode getbProcess() {
+        return bProcess;
+    }
+
+    public void setbProcess(ProcessNode bProcess) {
+        this.bProcess = bProcess;
+    }
+
+    public Queue<Message> getQueueAtoB() {
+        return queueAtoB;
+    }
+
+    public void setQueueAtoB(Queue<Message> queueAtoB) {
+        this.queueAtoB = queueAtoB;
+    }
+
+    public Queue<Message> getQueueBtoA() {
+        return queueBtoA;
+    }
+
+    public void setQueueBtoA(Queue<Message> queueBtoA) {
+        this.queueBtoA = queueBtoA;
+    }
+
+
+
+
+
+
+
+    //OLD crap
+
+    //public void sendMessage(RoundMessage msg){
+//        queue.add(new MessageContainer(AsyncLink.getRound(), msg));
+//    }
+
+//    public boolean hasAvailableMessage(){
+//        if(queue.isEmpty()){
+//            return false;
+//        }
+//        MessageContainer top = queue.peek();
+//        return top.shouldPop();
+//    }
+//
+//    public RoundMessage receiveMessage(){
+//        if(!hasAvailableMessage()){
+//            return null;
+//        }
+//        return queue.remove().getMessage();
+//    }
+
+
+
+//    class MessageContainer{
+//        long entryRound;
+//        int delay;
+//        RoundMessage message;
+//
+//        MessageContainer(long entryRound, RoundMessage message){
+//            this.entryRound = entryRound;
+//            this.message = message;
+//            this.delay = randomDelay();
+//        }
+//
+//        public boolean shouldPop(){
+//            long round = Link.getRound();
+//            return (round >= (entryRound+delay));
+//
+//        }
+//
+//        public RoundMessage getMessage(){
+//            return this.message;
+//        }
+//
+//        private int randomDelay(){
+//            final int MIN_BOUND = 1;
+//            final int MAX_BOUND = 19;
+//            return (int) ((Math.random()* (MAX_BOUND-MIN_BOUND)) + MIN_BOUND);
+//        }
+//    }
 }

@@ -1,23 +1,32 @@
-package com.syncsys.roundMessages;
+package com.syncsys.roundMessages.oldCrap;
 
 import com.syncsys.ProcessNode;
 import com.syncsys.roundStrategies.BellmanFordStrategy;
 import com.syncsys.roundStrategies.RoundStrategy;
 
-public class TerminateMessage implements RoundMessage {
+public class ConvergeCastMessage implements RoundMessage {
 	private String senderID;
 	private ProcessNode sender;
-
-	public TerminateMessage() {
+	private boolean child;			
+	
+	public ConvergeCastMessage() {
 		setSenderID("-1");
+	}
+	
+	public ConvergeCastMessage(String senderID, boolean child, boolean marked) {
+		this.senderID = senderID;
+		this.child = child;
 	}
 
 	@Override
     public void processUsing(RoundStrategy strategy) {
 		BellmanFordStrategy bfStrategy = (BellmanFordStrategy)strategy;
-		ProcessNode process = bfStrategy.getProcess();
-
-		process.setTerminating(true);
+		
+		bfStrategy.getResponseIDs().add(senderID);
+		
+		if (child) {
+			bfStrategy.getChildIDs().add(senderID);
+		}
     }
 
 	public String getSenderID() {
@@ -27,7 +36,6 @@ public class TerminateMessage implements RoundMessage {
 	public void setSenderID(String senderID) {
 		this.senderID = senderID;
 	}
-
 	@Override
 	public void setSender(ProcessNode node) {
 		this.sender = node;
@@ -38,4 +46,13 @@ public class TerminateMessage implements RoundMessage {
 	public ProcessNode getSender() {
 		return sender;
 	}
+
+	public boolean isChild() {
+	    return child;
+    }
+
+	public void setChild(boolean child) {
+	    this.child = child;
+    }
+
 }

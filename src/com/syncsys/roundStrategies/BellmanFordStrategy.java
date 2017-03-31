@@ -3,13 +3,12 @@ package com.syncsys.roundStrategies;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.syncsys.Links.AsyncLink;
 import com.syncsys.ProcessNode;
-import com.syncsys.roundMessages.BellmanFordMessage;
-import com.syncsys.roundMessages.ConvergeCastMessage;
-import com.syncsys.roundMessages.DoneMessage;
-import com.syncsys.roundMessages.RoundMessage;
-import com.syncsys.roundMessages.TerminateMessage;
+import com.syncsys.roundMessages.oldCrap.BellmanFordMessage;
+import com.syncsys.roundMessages.oldCrap.ConvergeCastMessage;
+import com.syncsys.roundMessages.oldCrap.DoneMessage;
+import com.syncsys.roundMessages.oldCrap.RoundMessage;
+import com.syncsys.roundMessages.oldCrap.TerminateMessage;
 
 
 public class BellmanFordStrategy implements RoundStrategy {
@@ -65,36 +64,36 @@ public class BellmanFordStrategy implements RoundStrategy {
 	
 	@Override
     public void generateMessages() {
-		for (ProcessNode neighbor : getProcess().getNeighbors().values()) {
-			
-			// Send BellmanFord message
-			BellmanFordMessage search = new BellmanFordMessage();
-			search.setSenderID(this.id);
-			search.setDistance(dist);
-			neighbor.addMessage(search);
-			
-			// Send ConvergeCast message
-			if (searchIDs.contains(neighbor.getId())) {
-				ConvergeCastMessage response = new ConvergeCastMessage();
-				response.setSenderID(this.id);
-				response.setChild(null != parent && neighbor.getId() == parent.getId());
-				neighbor.addMessage(response);
-			}
-			
-			// Send Done message to parent
-			if (null != parent && neighbor.getId() == parent.getId() && done) {
-				DoneMessage done = new DoneMessage();
-				done.setSenderID(this.id);
-				neighbor.addMessage(done);
-			}
-			
-			// Send Terminate message to children
-			if (process.isTerminating() && childIDs.contains(neighbor.getId())) {
-				TerminateMessage terminate = new TerminateMessage();
-				terminate.setSenderID(this.id);
-				neighbor.addMessage(terminate);
-			}
-		}
+//		for (ProcessNode neighbor : getProcess().getNeighbors().values()) {
+//
+//			// Send BellmanFord message
+//			BellmanFordMessage search = new BellmanFordMessage();
+//			search.setSenderID(this.id);
+//			search.setDistance(dist);
+//			neighbor.addMessage(search);
+//
+//			// Send ConvergeCast message
+//			if (searchIDs.contains(neighbor.getId())) {
+//				ConvergeCastMessage response = new ConvergeCastMessage();
+//				response.setSenderID(this.id);
+//				response.setChild(null != parent && neighbor.getId() == parent.getId());
+//				neighbor.addMessage(response);
+//			}
+//
+//			// Send Done message to parent
+//			if (null != parent && neighbor.getId() == parent.getId() && done) {
+//				DoneMessage done = new DoneMessage();
+//				done.setSenderID(this.id);
+//				neighbor.addMessage(done);
+//			}
+//
+//			// Send Terminate message to children
+//			if (process.isTerminating() && childIDs.contains(neighbor.getId())) {
+//				TerminateMessage terminate = new TerminateMessage();
+//				terminate.setSenderID(this.id);
+//				neighbor.addMessage(terminate);
+//			}
+//		}
     }
 
 	@Override

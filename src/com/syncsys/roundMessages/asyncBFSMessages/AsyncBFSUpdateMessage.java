@@ -1,7 +1,7 @@
 package com.syncsys.roundMessages.asyncBFSMessages;
 
 import com.syncsys.ProcessNode;
-import com.syncsys.roundMessages.RoundMessage;
+import com.syncsys.roundMessages.oldCrap.RoundMessage;
 import com.syncsys.roundStrategies.AsyncBFSStrategy;
 import com.syncsys.roundStrategies.RoundStrategy;
 
