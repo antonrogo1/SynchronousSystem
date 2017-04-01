@@ -44,7 +44,7 @@ public class ProcessController
             for (AsyncLink asyncLink : this.links) {
                 asyncLink.advanceTime();
             }
-            Thread.sleep(1000);
+            Thread.sleep(50);
         }
     }
 
@@ -89,7 +89,7 @@ public class ProcessController
                         } else if (stepCounter == 3) {
                             //Reading third line line - getting id of root process
                             rootID = line;
-                            this.processes.get(rootID).setDistance(0);
+                            this.processes.get(rootID).setHopDistance(0);
                             this.processes.get(rootID).setRoot(true);
                             stepCounter++;
                         } else if (stepCounter == 4) {
@@ -156,7 +156,7 @@ public class ProcessController
     {
         for (ProcessNode processNode : this.processes.values())
         {
-            System.out.println("Process ID: " + processNode.getId() + "; Distance: " + processNode.getDistance() + "; Shortest Path: " + this.describeShortestPath(processNode));
+            System.out.println("Process ID: " + processNode.getId() + "; Distance: " + processNode.getHopDistance() + "; Shortest Path: " + this.describeShortestPath(processNode));
         }
     }
 

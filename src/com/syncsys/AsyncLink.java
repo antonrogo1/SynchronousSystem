@@ -106,7 +106,7 @@ public class AsyncLink implements Runnable
     {
 
         try {
-            sleep(100);
+            sleep(10);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

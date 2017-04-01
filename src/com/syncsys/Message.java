@@ -8,7 +8,8 @@ import com.syncsys.enums.MessageType;
 public class Message
 {
     private MessageType messageType;         //What type of message
-    private int distance;                    //for Search Message Types
+    //private int distance;                       //for Search Message Types
+    private int hopDistance;                    //for Search Message Types
     private ProcessNode sender;                 //SenderId
     private int totalTransmisissionDuration; // how long it will take for message to arrive to destination
     private int transmisissionDurationSoFar; // for how long this message have been traveled
@@ -69,12 +70,12 @@ public class Message
         this.transmissionStartTime = transmissionStartTime;
     }
 
-    public int getDistance() {
-        return distance;
+    public int getHopDistance() {
+        return hopDistance;
     }
 
-    public void setDistance(int distance) {
-        this.distance = distance;
+    public void setHopDistance(int hopDistance) {
+        this.hopDistance = hopDistance;
     }
 
     public ProcessNode getSender() {

@@ -1,8 +1,6 @@
 package com.syncsys;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -15,19 +13,19 @@ import com.syncsys.enums.MessageType;
 public class ProcessNode implements Runnable
 {
     private String id;                              //Id of process
-    private int distance;                           //best distance to the root process know so far
+    private int hopDistance;                        //best distance to the root process know so far
 
     private Map<String, AsyncLink> links;   	   //Map of tuples: (id Of Neighbor process, link)
     private Map<String, ProcessNode> neighbors;    //Map of tuples: (id Of Neighbor process, neighbor)
 
     private ProcessNode parent;
-    private List<String> childrenIds;         //List of Children - nodes that acknowldged this node as Parent
-    private List<String> nonChildrenIds;      //List of NonChildren - nodes that acknowldged this node as Not-Parent
+    private Set<String> childrenIds;         //List of Children - nodes that acknowldged this node as Parent
+    private Set<String> nonChildrenIds;      //List of NonChildren - nodes that acknowldged this node as Not-Parent
 
-    private List<String> convCastChildrenIds;       //List of Children - that send ConvergeCastMessage
+    private Set<String> convCastChildrenIds;       //List of Children - that send ConvergeCastMessage
 
 
-    private List<String> doneChildIDs;        //List of Children nodes that identified them as Complete (them and their children found Shortest Path)
+    private Set<String> doneChildIDs;        //List of Children nodes that identified them as Complete (them and their children found Shortest Path)
 
     private List<String> responseIDs;
 
@@ -42,12 +40,12 @@ public class ProcessNode implements Runnable
     public ProcessNode(String id)
     {
         this.id = id;
-        this.distance = Integer.MAX_VALUE;
+        this.hopDistance = Integer.MAX_VALUE;
         this.links = new ConcurrentHashMap<String, AsyncLink>();
         this.neighbors = new ConcurrentHashMap<String, ProcessNode>();
-        this.childrenIds = new ArrayList<String >();
-        this.nonChildrenIds = new ArrayList<String>();
-        this.convCastChildrenIds = new ArrayList<String>();
+        this.childrenIds = new LinkedHashSet<String>();
+        this.nonChildrenIds = new LinkedHashSet<String>();
+        this.convCastChildrenIds = new LinkedHashSet<String>();
 
         this.isRoot = false;
         this.needNotifyNeighbors = true;
@@ -65,7 +63,7 @@ public class ProcessNode implements Runnable
             for(Message message : arrivedMessages)
             {
                 if (message.getMessageType() == MessageType.EXPLORE) {
-                    processExploreMessage(message, asyncLink.getWeight());
+                    processExploreMessage(message);
                 }
                 else if (message.getMessageType() == MessageType.PARENT_ACKNOWLEDGE)
                 {
@@ -76,7 +74,7 @@ public class ProcessNode implements Runnable
                     processNotParentAcknowldgeMessage(message);
                 }
                 else if (message.getMessageType() == MessageType.CONVERGECAST) {
-                    processConvergeCastMessage(message, asyncLink.getWeight());
+                    processConvergeCastMessage(message);
                 }
                 else if (message.getMessageType() == MessageType.TERMINATE) {
                     processTerminateMessage(message);
@@ -85,15 +83,19 @@ public class ProcessNode implements Runnable
         }
     }
 
-    private void processExploreMessage(Message message, int linkWeight)
+    private void processExploreMessage(Message message)
     {
-        int newDistanceFromNeighboor = message.getDistance();
+
+        int newHopDistanceFromNeighboor = message.getHopDistance(); //neighbors hopDistance (not counting hop distance to this node)
 
         //If node received EXPLORE message from child - it means child got a new parent (Child is no longer a child)
         if(childrenIds.contains(message.getSender().getId()))
             childrenIds.remove(message.getSender().getId());
 
-        if(newDistanceFromNeighboor != Integer.MAX_VALUE && newDistanceFromNeighboor + linkWeight < this.distance )
+        if(nonChildrenIds.contains(message.getSender().getId()))
+            nonChildrenIds.remove(message.getSender().getId());
+
+        if(newHopDistanceFromNeighboor != Integer.MAX_VALUE && newHopDistanceFromNeighboor + 1 < this.hopDistance ) //one for single extra hop
         {
             if(this.parent !=null)
             {
@@ -105,22 +107,22 @@ public class ProcessNode implements Runnable
                 }
             }
 
-            this.distance = newDistanceFromNeighboor + linkWeight;
+            this.hopDistance = newHopDistanceFromNeighboor + 1;
             this.parent = message.getSender();
 
-            System.out.println("Process " + this.id + " now have parent " + parent.getId() + " and distance " + this.distance);
+            System.out.println("Process " + this.id + " now have parent " + parent.getId() + " and distance " + this.hopDistance);
 
             //Sending message to parent acknowledging him as parent
             Message messageToParent = new Message(MessageType.PARENT_ACKNOWLEDGE, this);
 
             //We returning the distance that we got from original sender(parent), So parent know which latest version of distance this node got,
             //there could be a case that parent got better distance, so it need to know  to resend latest distance.
-            messageToParent.setDistance(newDistanceFromNeighboor);
+            messageToParent.setHopDistance(newHopDistanceFromNeighboor);
 
             this.links.get(parent.getId()).getOutQueueFor(this).add(messageToParent);  //getting async link to parent and adding ack message
 
             //Non-Children may become children in the future
-            nonChildrenIds = new ArrayList<String>();
+            nonChildrenIds = new LinkedHashSet<String>();
             this.needNotifyNeighbors = true;
         }
         else // returning ack-message to original sender so it knows its message was processed
@@ -129,7 +131,7 @@ public class ProcessNode implements Runnable
 
             //We returning the distance that we got from original sender(Non-parent), So non-parent know which latest version of distance this node got,
             //there could be a case that non-parent got better distance, so it need to know  to resend latest distance.
-            messageToNonParent.setDistance(newDistanceFromNeighboor);
+            messageToNonParent.setHopDistance(newHopDistanceFromNeighboor);
 
             this.links.get(message.getSender().getId()).getOutQueueFor(this).add(messageToNonParent);  //getting async link to non-parent and adding ack message (Not-Parent)
         }
@@ -137,37 +139,50 @@ public class ProcessNode implements Runnable
 
     private void processParentAcknowldgeMessage(Message message)
     {
-        if(message.getDistance() == this.distance) {
+        if(message.getHopDistance() == this.hopDistance) {
             System.out.println("Process " + this.id + " received ack-message from child-process " + message.getSender().getId() + " acknowledging it as parent");
             this.childrenIds.add(message.getSender().getId());
-        }
-        else
+
             this.needNotifyNeighbors = true;
+
+            if(nonChildrenIds.contains(message.getSender().getId()))
+                nonChildrenIds.remove(message.getSender().getId());
+        }
+        else 
+            {
+                if(childrenIds.contains(message.getSender().getId()))
+                    childrenIds.remove(message.getSender().getId());
+            System.out.println("Process " + this.id + " received ack-message NOT-PARENT from neighbor process " + message.getSender().getId() + " BUT HOP-DISTANCE DIDN'T MATCHES");
+        }
     }
 
     private void processNotParentAcknowldgeMessage(Message message)
     {
-        if(message.getDistance() == this.distance) {
-            System.out.println("Process " + this.id + " received ack-message from neighbor process " + message.getSender().getId() + " rejecting it as parent");
+        if(message.getHopDistance() == this.hopDistance) {
+            System.out.println("Process " + this.id + " received ack-message NOT-PARENT from neighbor process " + message.getSender().getId() + " rejecting it as parent");
             this.nonChildrenIds.add(message.getSender().getId());
 
 
-            if(childrenIds.contains(message.getSender().getId()))
+            if(childrenIds.contains(message.getSender().getId())) {
                 childrenIds.remove(message.getSender().getId());
+                this.needNotifyNeighbors = true;
+            }
         }
         else
-            this.needNotifyNeighbors = true;
+        {
+            System.out.println("Process " + this.id + " received ack-message NOT-PARENT from neighbor process " + message.getSender().getId() + " BUT HOP-DISTANCE DIDN'T MATCHES");
+        }
     }
 
 
     //minusDistance used to make sure that Child and Parent are in sync on what is the latest shortest distance is.
-    private void processConvergeCastMessage(Message message, int minusDistance)
+    private void processConvergeCastMessage(Message message)
     {
 
         System.out.println("Process " + this.id + " received CONVERGECAST message from child process " + message.getSender().getId() );
 
-        //Child and parent are agree on latest shortest distance, parent acknowldge ConvergeCast message from its child.
-        if( (message.getDistance() - minusDistance) == this.distance)
+        //Child and parent are agree on latest shortest hop distance, parent acknowldge ConvergeCast message from its child.
+        if( (message.getHopDistance() - 1) == this.hopDistance)
         {
             this.convCastChildrenIds.add(message.getSender().getId());
         }
@@ -183,16 +198,14 @@ public class ProcessNode implements Runnable
     {
         System.out.println("Process " + this.id + " received TERMINATE message from parent process " + message.getSender().getId() );
 
+        for(String neighborId : this.links.keySet())
 
-        //Sending Terminate Message to its children
-        for(String childId : this.childrenIds)
         {
-            System.out.println("Process " + this.id + " sending TERMINATE message to the process " + childId);
-            Message messageToParentDone = new Message(MessageType.TERMINATE, this);
-            this.links.get(childId).getOutQueueFor(this).add(messageToParentDone);
+            System.out.println("Process " + this.id + " sending TERMINATE message to the process " + neighborId);
+            Message messageTerminateToCHild = new Message(MessageType.TERMINATE, this);
+            this.links.get(neighborId).getOutQueueFor(this).add(messageTerminateToCHild);
         }
         this.isTerminating = true;
-
     }
 
 
@@ -209,17 +222,17 @@ public class ProcessNode implements Runnable
             {
                 if(parent == null)
                 {
-                    System.out.println("Process " + this.id + " sending EXPLORE message with distance " + this.distance + " to the process " + neighborId);
+                    System.out.println("Process " + this.id + " sending EXPLORE message with distance " + this.hopDistance + " to the process " + neighborId);
                     Message messageToNeighbors = new Message(MessageType.EXPLORE, this);
-                    messageToNeighbors.setDistance(this.distance);
+                    messageToNeighbors.setHopDistance(this.hopDistance);
                     this.links.get(neighborId).getOutQueueFor(this).add(messageToNeighbors);
                 }
                 else
                     {
                     if (!neighborId.equals(parent.getId())) {
-                        System.out.println("Process " + this.id + " sending EXPLORE message with distance " + this.distance + " to the process " + neighborId);
+                        System.out.println("Process " + this.id + " sending EXPLORE message with distance " + this.hopDistance + " to the process " + neighborId);
                         Message messageToNeighbors = new Message(MessageType.EXPLORE, this);
-                        messageToNeighbors.setDistance(this.distance);
+                        messageToNeighbors.setHopDistance(this.hopDistance);
                         this.links.get(neighborId).getOutQueueFor(this).add(messageToNeighbors);  //getting async link to parent and adding explore message
                     }
                 }
@@ -239,9 +252,9 @@ public class ProcessNode implements Runnable
                 )
         {
 
-            System.out.println("Process " + this.id + " sending CONVERGECAST message with distance " + this.distance + " to the process " + this.parent.getId());
+            System.out.println("Process " + this.id + " sending CONVERGECAST message with distance " + this.hopDistance + " to the process " + this.parent.getId());
             Message messageToParentDone = new Message(MessageType.CONVERGECAST, this);
-            messageToParentDone.setDistance(this.distance);
+            messageToParentDone.setHopDistance(this.hopDistance);
             this.links.get(this.parent.getId()).getOutQueueFor(this).add(messageToParentDone);
             this.isConvergeCastMessageAlreadySent=true;
         }
@@ -295,14 +308,13 @@ public class ProcessNode implements Runnable
         this.id = id;
     }
 
-    public int getDistance() {
-        return distance;
+    public int getHopDistance() {
+        return hopDistance;
     }
 
-    public void setDistance(int distance) {
-        this.distance = distance;
+    public void setHopDistance(int hopDistance) {
+        this.hopDistance = hopDistance;
     }
-
 
     public Map<String, AsyncLink> getLinks() {
         return links;
@@ -328,19 +340,27 @@ public class ProcessNode implements Runnable
         this.parent = parent;
     }
 
-    public List<String> getChildrenIds() {
+    public Set<String> getChildrenIds() {
         return childrenIds;
     }
 
-    public void setChildrenIds(List<String> childrenIds) {
+    public void setChildrenIds(Set<String> childrenIds) {
         this.childrenIds = childrenIds;
     }
 
-    public List<String> getDoneChildIDs() {
+    public void setNonChildrenIds(Set<String> nonChildrenIds) {
+        this.nonChildrenIds = nonChildrenIds;
+    }
+
+    public void setConvCastChildrenIds(Set<String> convCastChildrenIds) {
+        this.convCastChildrenIds = convCastChildrenIds;
+    }
+
+    public Set<String> getDoneChildIDs() {
         return doneChildIDs;
     }
 
-    public void setDoneChildIDs(List<String> doneChildIDs) {
+    public void setDoneChildIDs(Set<String> doneChildIDs) {
         this.doneChildIDs = doneChildIDs;
     }
 
@@ -368,20 +388,12 @@ public class ProcessNode implements Runnable
         this.needNotifyNeighbors = needNotifyNeighbors;
     }
 
-    public List<String> getNonChildrenIds() {
+    public Set<String> getNonChildrenIds() {
         return nonChildrenIds;
     }
 
-    public void setNonChildrenIds(List<String> nonChildrenIds) {
-        this.nonChildrenIds = nonChildrenIds;
-    }
-
-    public List<String> getConvCastChildrenIds() {
+    public Set<String> getConvCastChildrenIds() {
         return convCastChildrenIds;
-    }
-
-    public void setConvCastChildrenIds(List<String> convCastChildrenIds) {
-        this.convCastChildrenIds = convCastChildrenIds;
     }
 
     public boolean isConvergeCastMessageAlreadySent() {
@@ -407,6 +419,7 @@ public class ProcessNode implements Runnable
     public void setTerminating(boolean terminating) {
         isTerminating = terminating;
     }
+
 
     /**
      * Equals and Hash
