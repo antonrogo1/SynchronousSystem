@@ -20,18 +20,16 @@ public class BellmanFordMessage implements RoundMessage {
 
 	@Override
     public void processUsing(RoundStrategy strategy) {
-		BellmanFordStrategy bfStrategy = (BellmanFordStrategy)strategy;
-		ProcessNode process = bfStrategy.getProcess();
-
-		bfStrategy.getSearchIDs().add(senderID);
+		ProcessNode process = strategy.getProcess();
+		process.getSearchIDs().add(senderID);
 
 		if(process.getWeights().get(senderID) == null)
 			System.out.println("Test");
 
 		int edgeWeight = process.getWeights().get(senderID);
-		if (Integer.MAX_VALUE != distance && distance + edgeWeight < bfStrategy.getDist()) {
-			bfStrategy.setDist(distance + edgeWeight);
-			bfStrategy.setParent(process.getNeighbors().get(senderID));
+		if (Integer.MAX_VALUE != distance && distance + edgeWeight < process.getDist()) {
+			process.setDist(distance + edgeWeight);
+			process.setParent(process.getNeighbors().get(senderID));
 		}
     }
 

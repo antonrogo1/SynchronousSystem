@@ -13,9 +13,8 @@ public class DoneMessage implements RoundMessage {
 
 	@Override
     public void processUsing(RoundStrategy strategy) {
-		BellmanFordStrategy bfStrategy = (BellmanFordStrategy)strategy;
-		
-		bfStrategy.getDoneChildIDs().add(senderID);
+		ProcessNode process = strategy.getProcess();
+		process.getDoneChildIDs().add(senderID);
     }
 
 	public String getSenderID() {

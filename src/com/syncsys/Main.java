@@ -7,7 +7,7 @@ public class Main {
     public static void main(String[] args)
     {
         ProcessController processController = new ProcessController();
-        processController.readInputFile("inputNew2.csv");
+        processController.readInputFile("input.txt");
 
         System.out.println("Finished reading InputFile");
 

@@ -38,28 +38,10 @@ public class BellmanFordStrategy implements RoundStrategy {
 	 *
 	 */
 
-	private String id;                   //ID of a process that owns this Strategy
-	private int dist;
-	private boolean root;
-	private boolean done;
 	private ProcessNode process;
-	private ProcessNode parent;
-	private List<String> childIDs;
-	private List<String> doneChildIDs;   //List of Children nodes that identified them as Complete (them and their children found Shortest Path)
-	private List<String> searchIDs;      //List of Children nodes that identified them as Complete (them and their children found Shortest Path)
-	private List<String> responseIDs;
 	
 	public BellmanFordStrategy(ProcessNode process) {
-		this.id = process.getId();
-		this.dist = Integer.MAX_VALUE;
-		this.root = false;
-		this.done = false;
 		this.process = process;
-		this.parent = null;
-		this.childIDs = new LinkedList<String>();
-		this.doneChildIDs = new LinkedList<String>();
-		this.searchIDs = new LinkedList<String>();
-		this.responseIDs = new LinkedList<String>();
 	}
 	
 	@Override
@@ -68,29 +50,29 @@ public class BellmanFordStrategy implements RoundStrategy {
 			
 			// Send BellmanFord message
 			BellmanFordMessage search = new BellmanFordMessage();
-			search.setSenderID(this.id);
-			search.setDistance(dist);
+			search.setSenderID(process.getId());
+			search.setDistance(process.getDist());
 			neighbor.addMessage(search);
 			
 			// Send ConvergeCast message
-			if (searchIDs.contains(neighbor.getId())) {
+			if (process.getSearchIDs().contains(neighbor.getId())) {
 				ConvergeCastMessage response = new ConvergeCastMessage();
-				response.setSenderID(this.id);
-				response.setChild(null != parent && neighbor.getId() == parent.getId());
+				response.setSenderID(process.getId());
+				response.setChild(null != process.getParent() && neighbor.getId() == process.getParent().getId());
 				neighbor.addMessage(response);
 			}
 			
 			// Send Done message to parent
-			if (null != parent && neighbor.getId() == parent.getId() && done) {
+			if (null != process.getParent() && neighbor.getId() == process.getParent().getId() && process.isDone()) {
 				DoneMessage done = new DoneMessage();
-				done.setSenderID(this.id);
+				done.setSenderID(process.getId());
 				neighbor.addMessage(done);
 			}
 			
 			// Send Terminate message to children
-			if (process.isTerminating() && childIDs.contains(neighbor.getId())) {
+			if (process.isTerminating() && process.getChildIDs().contains(neighbor.getId())) {
 				TerminateMessage terminate = new TerminateMessage();
-				terminate.setSenderID(this.id);
+				terminate.setSenderID(process.getId());
 				neighbor.addMessage(terminate);
 			}
 		}
@@ -98,10 +80,10 @@ public class BellmanFordStrategy implements RoundStrategy {
 
 	@Override
     public void processMessages() {
-		childIDs.clear();
-		doneChildIDs.clear();
-		searchIDs.clear();
-		responseIDs.clear();
+		process.getChildIDs().clear();
+		process.getDoneChildIDs().clear();
+		process.getSearchIDs().clear();
+		process.getResponseIDs().clear();
 		
 		for (RoundMessage message : process.getMessagesToProcess()) {
 			
@@ -111,18 +93,18 @@ public class BellmanFordStrategy implements RoundStrategy {
 			message.processUsing(this);
 		}
 		
-		if (null != parent && allChildrenDone()) {
-			done = true;
+		if (null != process.getParent() && allChildrenDone()) {
+			process.setDone(true);
 		}
 		
-		if (root && allChildrenDone()) {
+		if (process.isRoot() && allChildrenDone()) {
 			process.setTerminating(true);
 		}
     }
 
 	private boolean allChildrenDone() {
-	    boolean allSearchesResponded = responseIDs.size() == process.getNeighbors().size();
-	    boolean allChildrenDone = childIDs.size() == doneChildIDs.size();
+	    boolean allSearchesResponded = process.getResponseIDs().size() == process.getNeighbors().size();
+	    boolean allChildrenDone = process.getChildIDs().size() == process.getDoneChildIDs().size();
 	    return allSearchesResponded && allChildrenDone;
     }
 
@@ -133,93 +115,26 @@ public class BellmanFordStrategy implements RoundStrategy {
 		
 		System.out.println(
 				"id: " + process.getId() + ", " +
-				"dist: " + dist + ", " +
-				"done: " + done + ", " +
+				"dist: " + process.getDist() + ", " +
+				"done: " + process.isDone() + ", " +
 				"terminating: " + process.isTerminating() + ", " +
-				"children/done: " + childIDs.size() + "/" + doneChildIDs.size() + ", " +
-				((null != parent) ? ("parent: " + parent.getId()) : ""));
+				"children/done: " + process.getChildIDs().size() + "/" + process.getDoneChildIDs().size() + ", " +
+				((null != process.getParent()) ? ("parent: " + process.getParent().getId()) : ""));
 	}
 
+	//**************************************************************************************************//
+	//                                                                                                  //
+	//**************************************************************************************************//
+	
+	// Getters / Setters
 
-	//getters / setters
-
-	public int getDist() {
-	    return dist;
-    }
-
-	public void setDist(int dist) {
-	    this.dist = dist;
-    }
-	public ProcessNode getParent() {
-	    return parent;
-    }
-
-	public void setParent(ProcessNode parent) {
-	    this.parent = parent;
-    }
-
+	@Override
 	public ProcessNode getProcess() {
 	    return process;
     }
 
+	@Override
 	public void setProcess(ProcessNode process) {
 	    this.process = process;
     }
-
-	public boolean isDone() {
-	    return done;
-    }
-
-	public void setDone(boolean done) {
-	    this.done = done;
-    }
-
-	public boolean isRoot() {
-	    return root;
-    }
-
-	public void setRoot(boolean root) {
-	    this.root = root;
-	    if (root) { dist = 0; }
-    }
-
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public List<String> getChildIDs() {
-		return childIDs;
-	}
-
-	public void setChildIDs(List<String> childIDs) {
-		this.childIDs = childIDs;
-	}
-
-	public List<String> getDoneChildIDs() {
-		return doneChildIDs;
-	}
-
-	public void setDoneChildIDs(List<String> doneChildIDs) {
-		this.doneChildIDs = doneChildIDs;
-	}
-
-	public List<String> getSearchIDs() {
-		return searchIDs;
-	}
-
-	public void setSearchIDs(List<String> searchIDs) {
-		this.searchIDs = searchIDs;
-	}
-
-	public List<String> getResponseIDs() {
-		return responseIDs;
-	}
-
-	public void setResponseIDs(List<String> responseIDs) {
-		this.responseIDs = responseIDs;
-	}
 }

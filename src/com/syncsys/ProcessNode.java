@@ -16,15 +16,25 @@ import com.syncsys.roundStrategies.RoundStrategy;
  * Created by anton on 2/9/2017.
  */
 public class ProcessNode implements Runnable
-{
-    private String id;                                 //Id of process
+{                         
+    private String id;        
     private volatile boolean roundCompleted;		//indicates to the parent that Thread finished its round
     private volatile boolean terminating;           //true if terminating
     private Map<String, Integer> weights;   	 	//Map of tuples: (id Of Neighbor process, weight)
-    private Map<String, ProcessNode> neighbors;    //Map of tuples: (id Of Neighbor process, neighbor)
+    private Map<String, ProcessNode> neighbors;     //Map of tuples: (id Of Neighbor process, neighbor)
     private BlockingQueue<RoundMessage> messages;   //Messages sent to this node
     private List<RoundMessage> messagesToProcess;	//Messages to process this round
     private RoundStrategy roundStrategy;            //Strategy to execute during a round
+    
+    //BFS attributes
+	private int dist;
+	private boolean root;
+	private boolean done;
+	private ProcessNode parent;
+	private List<String> childIDs;
+	private List<String> doneChildIDs;   
+	private List<String> searchIDs;     
+	private List<String> responseIDs;
     
     public ProcessNode(String id)
     {
@@ -37,6 +47,14 @@ public class ProcessNode implements Runnable
         
         //set round to execute the Bellman Ford Algorithm
         this.roundStrategy = new BellmanFordStrategy(this);
+		this.dist = Integer.MAX_VALUE;
+		this.root = false;
+		this.done = false;
+		this.parent = null;
+		this.childIDs = new LinkedList<String>();
+		this.doneChildIDs = new LinkedList<String>();
+		this.searchIDs = new LinkedList<String>();
+		this.responseIDs = new LinkedList<String>();
     }
 
     public void addNeighbor(String id, int weight, ProcessNode neighbor)
@@ -75,15 +93,14 @@ public class ProcessNode implements Runnable
         }
     }
 
-
     //recursive method that return tuple (shortest Path description and total distance)
     public String describeShortestPath(ProcessNode processNode)
     {
         String pathDescription =  processNode.getId() ;
 
-        if(!((BellmanFordStrategy)processNode.getRoundStrategy()).isRoot())
+        if(!processNode.root)
         {
-            ProcessNode parentProcessNode = ((BellmanFordStrategy)processNode.getRoundStrategy()).getParent();
+            ProcessNode parentProcessNode = processNode.parent;
             String parentChain = processNode.describeShortestPath(parentProcessNode);
             pathDescription+= " =>" + parentChain;
 
@@ -95,20 +112,28 @@ public class ProcessNode implements Runnable
         }
     }
 
-
-
-
-    //Getters/Setters
-
+	@Override
+    public String toString() {
+        return "Process{" +
+                "id=" + getId() +
+                ", neighbor weights=" + weights +
+                '}';
+    }
+	
+	//**************************************************************************************************//
+	//                                                                                                  //
+	//**************************************************************************************************//
+	
+	// Getters / Setters
 
     public String getId() {
-        return id;
-    }
+		return id;
+	}
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
+	public void setId(String id) {
+		this.id = id;
+	}
+	
     public Map<String, Integer> getWeights() {
         return weights;
     }
@@ -165,12 +190,68 @@ public class ProcessNode implements Runnable
 	    this.messagesToProcess = messagesToProcess;
     }
 
-	@Override
-    public String toString() {
-        return "Process{" +
-                "id=" + id +
-                ", neighbor weights=" + weights +
-                '}';
-    }
+	public int getDist() {
+		return dist;
+	}
+
+	public void setDist(int dist) {
+		this.dist = dist;
+	}
+
+	public boolean isRoot() {
+		return root;
+	}
+
+	public void setRoot(boolean root) {
+		this.root = root;
+	}
+
+	public boolean isDone() {
+		return done;
+	}
+
+	public void setDone(boolean done) {
+		this.done = done;
+	}
+
+	public ProcessNode getParent() {
+		return parent;
+	}
+
+	public void setParent(ProcessNode parent) {
+		this.parent = parent;
+	}
+
+	public List<String> getChildIDs() {
+		return childIDs;
+	}
+
+	public void setChildIDs(List<String> childIDs) {
+		this.childIDs = childIDs;
+	}
+
+	public List<String> getDoneChildIDs() {
+		return doneChildIDs;
+	}
+
+	public void setDoneChildIDs(List<String> doneChildIDs) {
+		this.doneChildIDs = doneChildIDs;
+	}
+
+	public List<String> getSearchIDs() {
+		return searchIDs;
+	}
+
+	public void setSearchIDs(List<String> searchIDs) {
+		this.searchIDs = searchIDs;
+	}
+
+	public List<String> getResponseIDs() {
+		return responseIDs;
+	}
+
+	public void setResponseIDs(List<String> responseIDs) {
+		this.responseIDs = responseIDs;
+	}
 
 }

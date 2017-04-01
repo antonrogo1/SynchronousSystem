@@ -100,7 +100,8 @@ public class ProcessController
                         } else if (stepCounter == 3) {
                             //Reading thirdline line - getting id of root process
                             rootID = line;
-                            ((BellmanFordStrategy) processes.get(rootID).getRoundStrategy()).setRoot(true);
+                            processes.get(rootID).setRoot(true);
+                            processes.get(rootID).setDist(0);
                             stepCounter++;
                         } else if (stepCounter == 4) {
 			                /*
@@ -155,7 +156,7 @@ public class ProcessController
     	Map<String, String> nodeParentPairs = new LinkedHashMap<String, String>();
     	for(ProcessNode processNode : processes.values()) {
     		if (!processNode.getId().equals(rootID)) {
-    			ProcessNode parent = ((BellmanFordStrategy) processNode.getRoundStrategy()).getParent();
+    			ProcessNode parent = processNode.getParent();
     			nodeParentPairs.put(processNode.getId(), parent.getId());
     		}
     	}
@@ -178,7 +179,10 @@ public class ProcessController
     {
         for (ProcessNode processNode : this.processes.values())
         {
-            System.out.println("Process ID: " + processNode.getId() + "; Distance: " + ((BellmanFordStrategy)processNode.getRoundStrategy()).getDist() + "; Shortest Path: " + processNode.describeShortestPath(processNode));
+            System.out.println(
+            		"Process ID: " + processNode.getId() + 
+            		"; Distance: " + processNode.getDist() + 
+            		"; Shortest Path: " + processNode.describeShortestPath(processNode));
         }
     }
 

@@ -19,12 +19,11 @@ public class ConvergeCastMessage implements RoundMessage {
 
 	@Override
     public void processUsing(RoundStrategy strategy) {
-		BellmanFordStrategy bfStrategy = (BellmanFordStrategy)strategy;
-		
-		bfStrategy.getResponseIDs().add(senderID);
+		ProcessNode process = strategy.getProcess();
+		process.getResponseIDs().add(senderID);
 		
 		if (child) {
-			bfStrategy.getChildIDs().add(senderID);
+			process.getChildIDs().add(senderID);
 		}
     }
 

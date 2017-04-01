@@ -16,8 +16,11 @@ public interface RoundStrategy {
 	 * 		the incoming messages to obtain the new state. Remove all messages
 	 * 		from the channels.
 	 */
-
+	
 	void generateMessages();
 	void processMessages();
 	void execute();
+	
+	ProcessNode getProcess();
+	void setProcess(ProcessNode process);
 }
