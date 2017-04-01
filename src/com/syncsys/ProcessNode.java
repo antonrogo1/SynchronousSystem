@@ -15,35 +15,21 @@ import com.syncsys.roundStrategies.RoundStrategy;
 /**
  * Created by anton on 2/9/2017.
  */
-public class ProcessNode implements Runnable
+public class ProcessNode extends RunnableNode implements Runnable
 {                         
-    private String id;        
-    private volatile boolean roundCompleted;		//indicates to the parent that Thread finished its round
-    private volatile boolean terminating;           //true if terminating
-    private Map<String, Integer> weights;   	 	//Map of tuples: (id Of Neighbor process, weight)
-    private Map<String, ProcessNode> neighbors;     //Map of tuples: (id Of Neighbor process, neighbor)
-    private BlockingQueue<RoundMessage> messages;   //Messages sent to this node
-    private List<RoundMessage> messagesToProcess;	//Messages to process this round
-    private RoundStrategy roundStrategy;            //Strategy to execute during a round
-    
     //BFS attributes
-	private int dist;
-	private boolean root;
-	private boolean done;
-	private ProcessNode parent;
-	private List<String> childIDs;
-	private List<String> doneChildIDs;   
-	private List<String> searchIDs;     
-	private List<String> responseIDs;
+	protected int dist;
+	protected boolean root;
+	protected boolean done;
+	protected ProcessNode parent;
+	protected List<String> childIDs;
+	protected List<String> doneChildIDs;   
+	protected List<String> searchIDs;     
+	protected List<String> responseIDs;
     
     public ProcessNode(String id)
     {
-        this.id = id;
-        this.roundCompleted = false;
-        this.weights = new ConcurrentHashMap<String, Integer>();
-        this.neighbors = new ConcurrentHashMap<String, ProcessNode>();
-        this.messages = new LinkedBlockingQueue<RoundMessage>();
-        this.messagesToProcess = new LinkedList<RoundMessage>();
+    	super(id);
         
         //set round to execute the Bellman Ford Algorithm
         this.roundStrategy = new BellmanFordStrategy(this);
@@ -55,69 +41,6 @@ public class ProcessNode implements Runnable
 		this.doneChildIDs = new LinkedList<String>();
 		this.searchIDs = new LinkedList<String>();
 		this.responseIDs = new LinkedList<String>();
-    }
-
-    public void addNeighbor(String id, int weight, ProcessNode neighbor)
-    {
-        weights.put(id, weight);
-        neighbors.put(id, neighbor);
-    }
-
-    //Single Round (also see function below)
-    @Override
-    public void run()
-    {
-	    roundStrategy.execute();
-        roundCompleted = true;
-    }
-
-    //before each round thread should complete this step.
-    public void resetRoundToStart() throws InterruptedException
-    {
-        roundCompleted = false;
-        
-        // Allow messages to only be processed at the start of the next round
-        messagesToProcess.clear();
-        int numMessages = messages.size();
-		for (int i = 0; i < numMessages; i++) {
-			RoundMessage message = messages.take();
-			messagesToProcess.add(message);
-		}
-    }
-
-    public void addMessage(RoundMessage message) {
-        try {
-            messages.put(message);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    //recursive method that return tuple (shortest Path description and total distance)
-    public String describeShortestPath(ProcessNode processNode)
-    {
-        String pathDescription =  processNode.getId() ;
-
-        if(!processNode.root)
-        {
-            ProcessNode parentProcessNode = processNode.parent;
-            String parentChain = processNode.describeShortestPath(parentProcessNode);
-            pathDescription+= " =>" + parentChain;
-
-            return pathDescription;
-        }
-        else
-        {
-            return processNode.getId();
-        }
-    }
-
-	@Override
-    public String toString() {
-        return "Process{" +
-                "id=" + getId() +
-                ", neighbor weights=" + weights +
-                '}';
     }
 	
 	//**************************************************************************************************//
