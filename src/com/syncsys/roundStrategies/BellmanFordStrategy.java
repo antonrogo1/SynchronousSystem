@@ -3,6 +3,7 @@ package com.syncsys.roundStrategies;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.syncsys.MessagePacket;
 import com.syncsys.ProcessNode;
 import com.syncsys.roundMessages.BellmanFordMessage;
 import com.syncsys.roundMessages.ConvergeCastMessage;
@@ -48,33 +49,37 @@ public class BellmanFordStrategy implements RoundStrategy {
     public void generateMessages() {
 		for (ProcessNode neighbor : getProcess().getNeighbors().values()) {
 			
+			MessagePacket packet = new MessagePacket();
+			
 			// Send BellmanFord message
 			BellmanFordMessage search = new BellmanFordMessage();
 			search.setSenderID(process.getId());
 			search.setDistance(process.getDist());
-			neighbor.addMessage(search);
+			packet.addMessage(search);
 			
 			// Send ConvergeCast message
 			if (process.getSearchIDs().contains(neighbor.getId())) {
 				ConvergeCastMessage response = new ConvergeCastMessage();
 				response.setSenderID(process.getId());
 				response.setChild(null != process.getParent() && neighbor.getId() == process.getParent().getId());
-				neighbor.addMessage(response);
+				packet.addMessage(response);
 			}
 			
 			// Send Done message to parent
 			if (null != process.getParent() && neighbor.getId() == process.getParent().getId() && process.isDone()) {
 				DoneMessage done = new DoneMessage();
 				done.setSenderID(process.getId());
-				neighbor.addMessage(done);
+				packet.addMessage(done);
 			}
 			
 			// Send Terminate message to children
 			if (process.isTerminating() && process.getChildIDs().contains(neighbor.getId())) {
 				TerminateMessage terminate = new TerminateMessage();
 				terminate.setSenderID(process.getId());
-				neighbor.addMessage(terminate);
+				packet.addMessage(terminate);
 			}
+			
+			neighbor.addMessage(packet);
 		}
     }
 
@@ -84,13 +89,15 @@ public class BellmanFordStrategy implements RoundStrategy {
 		process.getDoneChildIDs().clear();
 		process.getSearchIDs().clear();
 		process.getResponseIDs().clear();
-		
-		for (RoundMessage message : process.getMessagesToProcess()) {
-			
-			// Only the message knows how it should be processed
-			// Thus we give control to the message for processing
-			
-			message.processUsing(this);
+
+		for (MessagePacket packet : process.getMessagesToProcess()) {
+			for (RoundMessage message : packet.getMessages()) {
+				
+				// Only the message knows how it should be processed
+				// Thus we give control to the message for processing
+				
+				message.processUsing(this);
+			}
 		}
 		
 		if (null != process.getParent() && allChildrenDone()) {

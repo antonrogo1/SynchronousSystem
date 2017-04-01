@@ -33,6 +33,7 @@ public class ProcessNode extends RunnableNode implements Runnable
         
         //set round to execute the Bellman Ford Algorithm
         this.roundStrategy = new BellmanFordStrategy(this);
+        
 		this.dist = Integer.MAX_VALUE;
 		this.root = false;
 		this.done = false;
@@ -48,71 +49,7 @@ public class ProcessNode extends RunnableNode implements Runnable
 	//**************************************************************************************************//
 	
 	// Getters / Setters
-
-    public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-	
-    public Map<String, Integer> getWeights() {
-        return weights;
-    }
-
-    public void setWeights(Map<String, Integer> weights) {
-        this.weights = weights;
-    }
-
-    public Map<String, ProcessNode> getNeighbors() {
-        return neighbors;
-    }
-
-    public void setNeighbors(Map<String, ProcessNode> neighbors) {
-        this.neighbors = neighbors;
-    }
-
-    public boolean isRoundCompleted() {
-        return roundCompleted;
-    }
-
-    public void setRoundCompleted(boolean roundCompleted) {
-        this.roundCompleted = roundCompleted;
-    }
-
-	public boolean isTerminating() {
-	    return terminating;
-    }
-
-	public void setTerminating(boolean terminating) {
-	    this.terminating = terminating;
-    }
-
-	public RoundStrategy getRoundStrategy() {
-	    return roundStrategy;
-    }
-
-	public void setRoundStrategy(RoundStrategy roundStrategy) {
-	    this.roundStrategy = roundStrategy;
-    }
-
-	public BlockingQueue<RoundMessage> getMessages() {
-	    return messages;
-    }
-
-	public void setMessages(BlockingQueue<RoundMessage> messages) {
-	    this.messages = messages;
-    }
-
-    public List<RoundMessage> getMessagesToProcess() {
-	    return messagesToProcess;
-    }
-
-	public void setMessagesToProcess(List<RoundMessage> messagesToProcess) {
-	    this.messagesToProcess = messagesToProcess;
-    }
-
+    
 	public int getDist() {
 		return dist;
 	}

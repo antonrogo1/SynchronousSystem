@@ -1,6 +1,5 @@
 package com.syncsys;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -8,7 +7,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.syncsys.roundMessages.RoundMessage;
 import com.syncsys.roundStrategies.RoundStrategy;
 
 /**
@@ -17,13 +15,13 @@ import com.syncsys.roundStrategies.RoundStrategy;
 public class RunnableNode implements Runnable
 {                         
     protected String id;        
-    protected volatile boolean roundCompleted;		 //indicates to the parent that Thread finished its round
-    protected volatile boolean terminating;          //true if terminating
-    protected Map<String, Integer> weights;   	 	 //Map of tuples: (id Of Neighbor process, weight)
-    protected Map<String, ProcessNode> neighbors;    //Map of tuples: (id Of Neighbor process, neighbor)
-    protected BlockingQueue<RoundMessage> messages;  //Messages sent to this node
-    protected List<RoundMessage> messagesToProcess;	 //Messages to process this round
-    protected RoundStrategy roundStrategy;           //Strategy to execute during a round
+    protected volatile boolean roundCompleted;		  //indicates to the parent that Thread finished its round
+    protected volatile boolean terminating;           //true if terminating
+    protected Map<String, Integer> weights;   	 	  //Map of tuples: (id Of Neighbor process, weight)
+    protected Map<String, ProcessNode> neighbors;     //Map of tuples: (id Of Neighbor process, neighbor)
+    protected BlockingQueue<MessagePacket> messages;  //Messages sent to this node
+    protected List<MessagePacket> messagesToProcess;  //Messages to process this round
+    protected RoundStrategy roundStrategy;            //Strategy to execute during a round
     
     public RunnableNode(String id)
     {
@@ -31,8 +29,8 @@ public class RunnableNode implements Runnable
         this.roundCompleted = false;
         this.weights = new ConcurrentHashMap<String, Integer>();
         this.neighbors = new ConcurrentHashMap<String, ProcessNode>();
-        this.messages = new LinkedBlockingQueue<RoundMessage>();
-        this.messagesToProcess = new LinkedList<RoundMessage>();
+        this.messages = new LinkedBlockingQueue<MessagePacket>();
+        this.messagesToProcess = new LinkedList<MessagePacket>();
     }
     
     // Single Round (also see function below)
@@ -59,13 +57,13 @@ public class RunnableNode implements Runnable
         messagesToProcess.clear();
         int numMessages = messages.size();
 		for (int i = 0; i < numMessages; i++) {
-			RoundMessage message = messages.take();
+			MessagePacket message = messages.take();
 			messagesToProcess.add(message);
 		}
     }
 
     // Add message to parse
-    public void addMessage(RoundMessage message) {
+    public void addMessage(MessagePacket message) {
         try {
             messages.put(message);
         } catch (InterruptedException e) {
@@ -154,19 +152,19 @@ public class RunnableNode implements Runnable
 	    this.roundStrategy = roundStrategy;
     }
 
-	public BlockingQueue<RoundMessage> getMessages() {
+	public BlockingQueue<MessagePacket> getMessages() {
 	    return messages;
     }
 
-	public void setMessages(BlockingQueue<RoundMessage> messages) {
+	public void setMessages(BlockingQueue<MessagePacket> messages) {
 	    this.messages = messages;
     }
 
-    public List<RoundMessage> getMessagesToProcess() {
+    public List<MessagePacket> getMessagesToProcess() {
 	    return messagesToProcess;
     }
 
-	public void setMessagesToProcess(List<RoundMessage> messagesToProcess) {
+	public void setMessagesToProcess(List<MessagePacket> messagesToProcess) {
 	    this.messagesToProcess = messagesToProcess;
     }
 }
