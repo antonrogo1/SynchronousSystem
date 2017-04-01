@@ -36,6 +36,7 @@ public class ProcessNode implements Runnable
     private boolean isConvergeCastMessageAlreadySent; //flag indicating that Process already send ConvergeCast Message
     private boolean isTerminating;                    //flag indicating that process needs to terminate
 
+    private Map<String,  List<MessageType>> messagesThatShouldBePacketed = new ConcurrentHashMap<String, List<MessageType>>();
 
     public ProcessNode(String id)
     {
@@ -53,6 +54,17 @@ public class ProcessNode implements Runnable
         this.isTerminating = false;
     }
 
+    private void addToPacketTest(String id, MessageType message) {
+    	List<MessageType> messagesForId = messagesThatShouldBePacketed.get(id);
+    	if (null != messagesForId) {
+    		messagesForId.add(message);
+    	}
+    	else {
+    		messagesForId = new ArrayList<MessageType>();
+    		messagesForId.add(message);
+    		messagesThatShouldBePacketed.put(id, messagesForId);
+    	}
+    }
 
     public void checkAndProcessIncomingMessages()
     {
@@ -104,6 +116,7 @@ public class ProcessNode implements Runnable
                     //Sending message to old parent rejecting him as parent
                     Message messageToParent = new Message(MessageType.NOTPARENT_ACKNOWLEDGE, this);
                     this.links.get(parent.getId()).getOutQueueFor(this).add(messageToParent);
+                    addToPacketTest(parent.getId(), MessageType.NOTPARENT_ACKNOWLEDGE);
                 }
             }
 
@@ -114,6 +127,7 @@ public class ProcessNode implements Runnable
 
             //Sending message to parent acknowledging him as parent
             Message messageToParent = new Message(MessageType.PARENT_ACKNOWLEDGE, this);
+            addToPacketTest(parent.getId(), MessageType.PARENT_ACKNOWLEDGE);
 
             //We returning the distance that we got from original sender(parent), So parent know which latest version of distance this node got,
             //there could be a case that parent got better distance, so it need to know  to resend latest distance.
@@ -128,6 +142,8 @@ public class ProcessNode implements Runnable
         else // returning ack-message to original sender so it knows its message was processed
         {
             Message messageToNonParent = new Message(MessageType.NOTPARENT_ACKNOWLEDGE, this);
+            addToPacketTest(message.getSender().getId(), MessageType.NOTPARENT_ACKNOWLEDGE);
+
 
             //We returning the distance that we got from original sender(Non-parent), So non-parent know which latest version of distance this node got,
             //there could be a case that non-parent got better distance, so it need to know  to resend latest distance.
@@ -203,6 +219,8 @@ public class ProcessNode implements Runnable
         {
             System.out.println("Process " + this.id + " sending TERMINATE message to the process " + neighborId);
             Message messageTerminateToCHild = new Message(MessageType.TERMINATE, this);
+
+            addToPacketTest(neighborId, MessageType.TERMINATE);
             this.links.get(neighborId).getOutQueueFor(this).add(messageTerminateToCHild);
         }
         this.isTerminating = true;
@@ -224,6 +242,7 @@ public class ProcessNode implements Runnable
                 {
                     System.out.println("Process " + this.id + " sending EXPLORE message with distance " + this.hopDistance + " to the process " + neighborId);
                     Message messageToNeighbors = new Message(MessageType.EXPLORE, this);
+                    addToPacketTest(neighborId, MessageType.EXPLORE);
                     messageToNeighbors.setHopDistance(this.hopDistance);
                     this.links.get(neighborId).getOutQueueFor(this).add(messageToNeighbors);
                 }
@@ -232,6 +251,7 @@ public class ProcessNode implements Runnable
                     if (!neighborId.equals(parent.getId())) {
                         System.out.println("Process " + this.id + " sending EXPLORE message with distance " + this.hopDistance + " to the process " + neighborId);
                         Message messageToNeighbors = new Message(MessageType.EXPLORE, this);
+                        addToPacketTest(neighborId, MessageType.EXPLORE);
                         messageToNeighbors.setHopDistance(this.hopDistance);
                         this.links.get(neighborId).getOutQueueFor(this).add(messageToNeighbors);  //getting async link to parent and adding explore message
                     }
@@ -254,6 +274,7 @@ public class ProcessNode implements Runnable
 
             System.out.println("Process " + this.id + " sending CONVERGECAST message with distance " + this.hopDistance + " to the process " + this.parent.getId());
             Message messageToParentDone = new Message(MessageType.CONVERGECAST, this);
+            addToPacketTest(parent.getId(), MessageType.CONVERGECAST);
             messageToParentDone.setHopDistance(this.hopDistance);
             this.links.get(this.parent.getId()).getOutQueueFor(this).add(messageToParentDone);
             this.isConvergeCastMessageAlreadySent=true;
@@ -266,12 +287,25 @@ public class ProcessNode implements Runnable
             {
                 System.out.println("Process " + this.id + " sending TERMINATE message to the process " + childId);
                 Message messageToParentDone = new Message(MessageType.TERMINATE, this);
+                addToPacketTest(childId, MessageType.TERMINATE);
                 this.links.get(childId).getOutQueueFor(this).add(messageToParentDone);
             }
             this.isTerminating = true;
         }
-
-
+        
+        for (String id : messagesThatShouldBePacketed.keySet()) {
+        	List<MessageType> messagesForId = messagesThatShouldBePacketed.get(id);
+        	if (null != messagesForId && messagesForId.size() > 1) {
+        		String shouldBePacketed = "=== Process " + this.id + " should packet messages to " + id + ": ";
+        		
+        		for (MessageType messageType : messagesForId) {
+        			shouldBePacketed += messageType + ", ";
+				}
+        		
+        		System.out.println(shouldBePacketed);
+        	}
+        }
+        messagesThatShouldBePacketed = new ConcurrentHashMap<String, List<MessageType>>();
     }
 
     @Override
