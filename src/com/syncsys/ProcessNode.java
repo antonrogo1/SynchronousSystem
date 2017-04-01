@@ -95,6 +95,16 @@ public class ProcessNode implements Runnable
 
         if(newDistanceFromNeighboor != Integer.MAX_VALUE && newDistanceFromNeighboor + linkWeight < this.distance )
         {
+            if(this.parent !=null)
+            {
+                if (this.parent.getId() != message.getSender().getId())
+                {
+                    //Sending message to old parent rejecting him as parent
+                    Message messageToParent = new Message(MessageType.NOTPARENT_ACKNOWLEDGE, this);
+                    this.links.get(parent.getId()).getOutQueueFor(this).add(messageToParent);
+                }
+            }
+
             this.distance = newDistanceFromNeighboor + linkWeight;
             this.parent = message.getSender();
 
@@ -224,14 +234,10 @@ public class ProcessNode implements Runnable
                 //AND All children and non children have been identified
             ((this.childrenIds.size() + this.nonChildrenIds.size() + 1) == this.links.size()) && // 1 is for parent
                 //AND if all chidren(if any) has sent their ConvergeCastMessages
-             this.childrenIds.size() == this.convCastChildrenIds.size()
+             this.childrenIds.size() == this.convCastChildrenIds.size() &&
+                this.parent != null
                 )
         {
-
-            if( this.parent == null)
-            {
-                System.out.println("Catched null parent for process " + this.id);
-            }
 
             System.out.println("Process " + this.id + " sending CONVERGECAST message with distance " + this.distance + " to the process " + this.parent.getId());
             Message messageToParentDone = new Message(MessageType.CONVERGECAST, this);
@@ -265,7 +271,8 @@ public class ProcessNode implements Runnable
             sendMessages();
             try
             {
-                Thread.sleep(50);
+                Thread.sleep(50
+                );
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

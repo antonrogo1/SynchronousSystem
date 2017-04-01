@@ -44,7 +44,7 @@ public class ProcessController
             for (AsyncLink asyncLink : this.links) {
                 asyncLink.advanceTime();
             }
-            Thread.sleep(500);
+            Thread.sleep(1000);
         }
     }
 

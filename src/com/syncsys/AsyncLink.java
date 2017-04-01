@@ -88,10 +88,10 @@ public class AsyncLink implements Runnable
                     result.add(message);
                 }
                 else
-                    break;   //Not checking other messages in a queue if prior one still not arrived
+                    haveMoreArrivedMessages=false;   //Not checking other messages in a queue if prior one still not arrived
             }
             else
-                break; //no meessages in the queue
+                haveMoreArrivedMessages=false; //no meessages in the queue
 
         }
         return result;
