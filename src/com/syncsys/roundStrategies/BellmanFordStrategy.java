@@ -49,7 +49,7 @@ public class BellmanFordStrategy implements RoundStrategy {
     public void generateMessages() {
 		for (ProcessNode neighbor : getProcess().getNeighbors().values()) {
 			
-			MessagePacket packet = new MessagePacket();
+			MessagePacket packet = new MessagePacket(process.getId(), neighbor.getId());
 			
 			// Send BellmanFord message
 			BellmanFordMessage search = new BellmanFordMessage();
