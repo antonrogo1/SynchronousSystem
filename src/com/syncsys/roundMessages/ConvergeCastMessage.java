@@ -23,6 +23,9 @@ public class ConvergeCastMessage implements RoundMessage {
 		if (child) {
 			process.getChildIDs().add(senderID);
 		}
+		else {
+			process.getChildIDs().remove(senderID);
+		}
     }
 	
 	//**************************************************************************************************//

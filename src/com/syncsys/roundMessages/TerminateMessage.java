@@ -12,6 +12,7 @@ public class TerminateMessage implements RoundMessage {
 	@Override
     public void handleUsing(ProcessNode process) {
 		process.setTerminating(true);
+		process.setNeedsToSendMessages(true);
     }
 	
 	//**************************************************************************************************//

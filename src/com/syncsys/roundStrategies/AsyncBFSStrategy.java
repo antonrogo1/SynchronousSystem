@@ -24,6 +24,11 @@ public class AsyncBFSStrategy implements RoundStrategy {
 	
 	@Override
     public void generateMessages() {
+		
+		// Note: we check if sending is needed to avoid creating
+		// empty message packets. Creating empty message packets
+		// affects the global sender-recipient packet delays.
+		
 		if (!process.isNeedsToSendMessages()) { return; }
 		
 		for (ProcessNode neighbor : getProcess().getNeighbors().values()) {
@@ -59,12 +64,12 @@ public class AsyncBFSStrategy implements RoundStrategy {
 				process.setNeedsToSendDoneToParent(false);
 			}
 			
-//			// Send Terminate message to children
-//			if (process.isTerminating() && process.getChildIDs().contains(neighbor.getId())) {
-//				TerminateMessage terminate = new TerminateMessage();
-//				terminate.setSenderID(process.getId());
-//				packet.addMessage(terminate);
-//			}
+			// Send Terminate message to children
+			if (process.isTerminating() && process.getChildIDs().contains(neighbor.getId())) {
+				TerminateMessage terminate = new TerminateMessage();
+				terminate.setSenderID(process.getId());
+				packet.addMessage(terminate);
+			}
 			
 			neighbor.addMessage(packet);
 		}
@@ -91,9 +96,10 @@ public class AsyncBFSStrategy implements RoundStrategy {
 			process.setNeedsToSendMessages(true);
 		}
 		
-//		if (process.isRoot() && allChildrenDone()) {
-//			process.setTerminating(true);
-//		}
+		if (process.isRoot() && allChildrenDone()) {
+			process.setTerminating(true);
+			process.setNeedsToSendMessages(true);
+		}
     }
 
 	private boolean allChildrenDone() {

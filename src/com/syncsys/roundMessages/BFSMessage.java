@@ -19,7 +19,13 @@ public class BFSMessage implements RoundMessage {
 	@Override
     public void handleUsing(ProcessNode process) {
 		process.getSearchIDs().add(senderID);
-
+		
+		// Child has new parent if it is broadcasting lower or equal distance
+		if (process.getChildIDs().contains(senderID) && distance <= process.getDist()) {
+			process.getChildIDs().remove(senderID);
+		}
+		
+		// Distance is one more than sender
 		if (distance + 1 < process.getDist()) {
 			process.setDist(distance + 1);
 			process.setParent(process.getNeighbors().get(senderID));
