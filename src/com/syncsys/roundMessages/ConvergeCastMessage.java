@@ -11,7 +11,7 @@ public class ConvergeCastMessage implements RoundMessage {
 		setSenderID("-1");
 	}
 	
-	public ConvergeCastMessage(String senderID, boolean child, boolean marked) {
+	public ConvergeCastMessage(String senderID, boolean child) {
 		this.senderID = senderID;
 		this.child = child;
 	}

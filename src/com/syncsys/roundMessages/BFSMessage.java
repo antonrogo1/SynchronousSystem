@@ -23,8 +23,17 @@ public class BFSMessage implements RoundMessage {
 		if (distance + 1 < process.getDist()) {
 			process.setDist(distance + 1);
 			process.setParent(process.getNeighbors().get(senderID));
-			process.setNeedsToSendMessages(true);
+			process.setGotNewParent(true);
+			process.setNeedsToSendDoneToParent(true);
+
+			process.getChildIDs().clear();
+			process.getDoneChildIDs().clear();
+			process.getResponseIDs().clear();
 		}
+
+		// Even if the message isn't a parent,
+		// we need to send a response message
+		process.setNeedsToSendMessages(true);
     }
 	
 	//**************************************************************************************************//

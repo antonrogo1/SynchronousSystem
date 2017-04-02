@@ -12,7 +12,7 @@ public class AsyncBFSStrategy implements RoundStrategy {
 	
 	/*** 
 	 * AsyncBFS is defined in Distributed Algorithms by Nancy A. Lynch (p. 502).
-	 * It is a modfied SyncBFS where each node manages the distance. 
+	 * It is a modified SyncBFS where each node manages the distance. 
 	 *
 	 */
 
@@ -28,31 +28,37 @@ public class AsyncBFSStrategy implements RoundStrategy {
 		
 		for (ProcessNode neighbor : getProcess().getNeighbors().values()) {
 			
+			// Create a packet to hold all messages towards a neighbor
 			MessagePacket packet = new MessagePacket(process.getId(), neighbor.getId());
 
 			// Send BFS message
-			if (process.isNeedsToSendInitialSearch() || null != process.getParent()) {
+			if (process.isNeedsToSendInitialSearch() || process.isGotNewParent()) {
 				BFSMessage search = new BFSMessage();
 				search.setSenderID(process.getId());
 				search.setDistance(process.getDist());
 				packet.addMessage(search);
 			}
 			
-//			// Send ConvergeCast message
-//			if (process.getSearchIDs().contains(neighbor.getId())) {
-//				ConvergeCastMessage response = new ConvergeCastMessage();
-//				response.setSenderID(process.getId());
-//				response.setChild(null != process.getParent() && neighbor.getId() == process.getParent().getId());
-//				packet.addMessage(response);
-//			}
-//			
-//			// Send Done message to parent
-//			if (null != process.getParent() && neighbor.getId() == process.getParent().getId() && process.isDone()) {
-//				DoneMessage done = new DoneMessage();
-//				done.setSenderID(process.getId());
-//				packet.addMessage(done);
-//			}
-//			
+			// Send ConvergeCast message
+			if (process.getSearchIDs().contains(neighbor.getId())) {
+				ConvergeCastMessage response = new ConvergeCastMessage();
+				response.setSenderID(process.getId());
+				response.setChild(isNeighborParent(neighbor));
+				packet.addMessage(response);
+				
+				// Remove the ID to avoid sending the response again
+				process.getSearchIDs().remove(neighbor.getId());
+			}
+			
+			// Send Done message to parent
+			if (isNeighborParent(neighbor) && process.isDone() && process.isNeedsToSendDoneToParent()) {
+				DoneMessage done = new DoneMessage();
+				done.setSenderID(process.getId());
+				packet.addMessage(done);
+				
+				process.setNeedsToSendDoneToParent(false);
+			}
+			
 //			// Send Terminate message to children
 //			if (process.isTerminating() && process.getChildIDs().contains(neighbor.getId())) {
 //				TerminateMessage terminate = new TerminateMessage();
@@ -64,13 +70,12 @@ public class AsyncBFSStrategy implements RoundStrategy {
 		}
     }
 
+	private boolean isNeighborParent(ProcessNode neighbor) {
+		return null != process.getParent() && neighbor.getId() == process.getParent().getId();
+	}
+
 	@Override
     public void processMessages() {
-		process.getChildIDs().clear();
-		process.getDoneChildIDs().clear();
-		process.getSearchIDs().clear();
-		process.getResponseIDs().clear();
-
 		for (MessagePacket packet : process.getMessagesToProcess()) {
 			for (RoundMessage message : packet.getMessages()) {
 				
@@ -81,13 +86,14 @@ public class AsyncBFSStrategy implements RoundStrategy {
 			}
 		}
 		
-		if (null != process.getParent() && allChildrenDone()) {
+		if (!process.isDone() && null != process.getParent() && allChildrenDone()) {
 			process.setDone(true);
+			process.setNeedsToSendMessages(true);
 		}
 		
-		if (process.isRoot() && allChildrenDone()) {
-			process.setTerminating(true);
-		}
+//		if (process.isRoot() && allChildrenDone()) {
+//			process.setTerminating(true);
+//		}
     }
 
 	private boolean allChildrenDone() {
@@ -100,9 +106,7 @@ public class AsyncBFSStrategy implements RoundStrategy {
     public void execute() {
 		processMessages();
 		generateMessages();
-		
-		process.setNeedsToSendInitialSearch(false);
-		process.setNeedsToSendMessages(false);
+		resetMessageFlags();
 		
 		System.out.println(
 				"id: " + process.getId() + ", " +
@@ -113,6 +117,12 @@ public class AsyncBFSStrategy implements RoundStrategy {
 				"msg queue: " + process.getMessages().size() + ", " +
 				"sender/delay: " + getDelays() + ", " +
 				((null != process.getParent()) ? ("parent: " + process.getParent().getId()) : ""));
+	}
+	
+	private void resetMessageFlags() {
+		process.setGotNewParent(false);
+		process.setNeedsToSendMessages(false);
+		process.setNeedsToSendInitialSearch(false);
 	}
 	
 	private String getDelays() {

@@ -1,7 +1,7 @@
 package com.syncsys;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 import com.syncsys.roundStrategies.AsyncBFSStrategy;
 
@@ -14,13 +14,15 @@ public class ProcessNode extends RunnableNode implements Runnable
 	protected int dist;
 	protected boolean root;
 	protected boolean done;
+	protected boolean gotNewParent;
 	protected boolean needsToSendMessages;
+	protected boolean needsToSendDoneToParent;
 	protected boolean needsToSendInitialSearch;
 	protected ProcessNode parent;
-	protected List<String> childIDs;
-	protected List<String> doneChildIDs;   
-	protected List<String> searchIDs;     
-	protected List<String> responseIDs;
+	protected Set<String> childIDs;
+	protected Set<String> doneChildIDs;   
+	protected Set<String> searchIDs;     
+	protected Set<String> responseIDs;
     
     public ProcessNode(String id)
     {
@@ -32,12 +34,14 @@ public class ProcessNode extends RunnableNode implements Runnable
 		this.dist = Integer.MAX_VALUE;
 		this.root = false;
 		this.done = false;
-		this.needsToSendMessages = false;
+		this.gotNewParent = false;
+		this.needsToSendDoneToParent = false;
+		this.needsToSendInitialSearch = false;
 		this.parent = null;
-		this.childIDs = new LinkedList<String>();
-		this.doneChildIDs = new LinkedList<String>();
-		this.searchIDs = new LinkedList<String>();
-		this.responseIDs = new LinkedList<String>();
+		this.childIDs = new HashSet<String>();
+		this.doneChildIDs = new HashSet<String>();
+		this.searchIDs = new HashSet<String>();
+		this.responseIDs = new HashSet<String>();
     }
 	
 	//**************************************************************************************************//
@@ -70,12 +74,28 @@ public class ProcessNode extends RunnableNode implements Runnable
 		this.done = done;
 	}
 
+	public boolean isGotNewParent() {
+		return gotNewParent;
+	}
+
+	public void setGotNewParent(boolean gotNewParent) {
+		this.gotNewParent = gotNewParent;
+	}
+
 	public boolean isNeedsToSendMessages() {
 		return needsToSendMessages;
 	}
 
 	public void setNeedsToSendMessages(boolean needsToSendMessages) {
 		this.needsToSendMessages = needsToSendMessages;
+	}
+
+	public boolean isNeedsToSendDoneToParent() {
+		return needsToSendDoneToParent;
+	}
+
+	public void setNeedsToSendDoneToParent(boolean needsToSendDoneToParent) {
+		this.needsToSendDoneToParent = needsToSendDoneToParent;
 	}
 
 	public boolean isNeedsToSendInitialSearch() {
@@ -94,35 +114,35 @@ public class ProcessNode extends RunnableNode implements Runnable
 		this.parent = parent;
 	}
 
-	public List<String> getChildIDs() {
+	public Set<String> getChildIDs() {
 		return childIDs;
 	}
 
-	public void setChildIDs(List<String> childIDs) {
+	public void setChildIDs(Set<String> childIDs) {
 		this.childIDs = childIDs;
 	}
 
-	public List<String> getDoneChildIDs() {
+	public Set<String> getDoneChildIDs() {
 		return doneChildIDs;
 	}
 
-	public void setDoneChildIDs(List<String> doneChildIDs) {
+	public void setDoneChildIDs(Set<String> doneChildIDs) {
 		this.doneChildIDs = doneChildIDs;
 	}
 
-	public List<String> getSearchIDs() {
+	public Set<String> getSearchIDs() {
 		return searchIDs;
 	}
 
-	public void setSearchIDs(List<String> searchIDs) {
+	public void setSearchIDs(Set<String> searchIDs) {
 		this.searchIDs = searchIDs;
 	}
 
-	public List<String> getResponseIDs() {
+	public Set<String> getResponseIDs() {
 		return responseIDs;
 	}
 
-	public void setResponseIDs(List<String> responseIDs) {
+	public void setResponseIDs(Set<String> responseIDs) {
 		this.responseIDs = responseIDs;
 	}
 
