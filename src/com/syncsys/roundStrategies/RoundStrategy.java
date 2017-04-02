@@ -21,6 +21,12 @@ public interface RoundStrategy {
 	void processMessages();
 	void execute();
 	
+	//**************************************************************************************************//
+	//                                                                                                  //
+	//**************************************************************************************************//
+	
+	// Getters / Setters
+	
 	ProcessNode getProcess();
 	void setProcess(ProcessNode process);
 }

@@ -1,27 +1,29 @@
 package com.syncsys.roundMessages;
 
 import com.syncsys.ProcessNode;
-import com.syncsys.roundStrategies.RoundStrategy;
 
-public class ConvergeCastMessage implements RoundMessage {
+public class BFSMessage implements RoundMessage {
 	private String senderID;
-	private boolean child;			
+	private int distance;
 	
-	public ConvergeCastMessage() {
+	public BFSMessage() {
 		setSenderID("-1");
+		setDistance(Integer.MAX_VALUE);
 	}
 	
-	public ConvergeCastMessage(String senderID, boolean child, boolean marked) {
+	public BFSMessage(String senderID, int distance) {
 		this.senderID = senderID;
-		this.child = child;
+		this.distance = distance;
 	}
 
 	@Override
     public void handleUsing(ProcessNode process) {
-		process.getResponseIDs().add(senderID);
-		
-		if (child) {
-			process.getChildIDs().add(senderID);
+		process.getSearchIDs().add(senderID);
+
+		if (distance + 1 < process.getDist()) {
+			process.setDist(distance + 1);
+			process.setParent(process.getNeighbors().get(senderID));
+			process.setNeedsToSendMessages(true);
 		}
     }
 	
@@ -39,12 +41,12 @@ public class ConvergeCastMessage implements RoundMessage {
 		this.senderID = senderID;
 	}
 
-	public boolean isChild() {
-	    return child;
+	public int getDistance() {
+	    return distance;
     }
 
-	public void setChild(boolean child) {
-	    this.child = child;
+	public void setDistance(int distance) {
+	    this.distance = distance;
     }
 
 }

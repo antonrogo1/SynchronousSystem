@@ -1,16 +1,9 @@
 package com.syncsys;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
 
-import com.syncsys.roundMessages.RoundMessage;
-import com.syncsys.roundStrategies.BellmanFordStrategy;
-import com.syncsys.roundStrategies.RoundStrategy;
+import com.syncsys.roundStrategies.AsyncBFSStrategy;
 
 /**
  * Created by anton on 2/9/2017.
@@ -21,6 +14,8 @@ public class ProcessNode extends RunnableNode implements Runnable
 	protected int dist;
 	protected boolean root;
 	protected boolean done;
+	protected boolean needsToSendMessages;
+	protected boolean needsToSendInitialSearch;
 	protected ProcessNode parent;
 	protected List<String> childIDs;
 	protected List<String> doneChildIDs;   
@@ -32,11 +27,12 @@ public class ProcessNode extends RunnableNode implements Runnable
     	super(id);
         
         //set round to execute the Bellman Ford Algorithm
-        this.roundStrategy = new BellmanFordStrategy(this);
+        this.roundStrategy = new AsyncBFSStrategy(this);
         
 		this.dist = Integer.MAX_VALUE;
 		this.root = false;
 		this.done = false;
+		this.needsToSendMessages = false;
 		this.parent = null;
 		this.childIDs = new LinkedList<String>();
 		this.doneChildIDs = new LinkedList<String>();
@@ -72,6 +68,22 @@ public class ProcessNode extends RunnableNode implements Runnable
 
 	public void setDone(boolean done) {
 		this.done = done;
+	}
+
+	public boolean isNeedsToSendMessages() {
+		return needsToSendMessages;
+	}
+
+	public void setNeedsToSendMessages(boolean needsToSendMessages) {
+		this.needsToSendMessages = needsToSendMessages;
+	}
+
+	public boolean isNeedsToSendInitialSearch() {
+		return needsToSendInitialSearch;
+	}
+
+	public void setNeedsToSendInitialSearch(boolean needsToSendInitialSearch) {
+		this.needsToSendInitialSearch = needsToSendInitialSearch;
 	}
 
 	public ProcessNode getParent() {

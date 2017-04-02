@@ -1,7 +1,5 @@
 package com.syncsys;
 
-import com.syncsys.roundStrategies.BellmanFordStrategy;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.*;
@@ -11,12 +9,15 @@ import java.util.*;
  */
 public class ProcessController
 {
+    private static volatile int roundCount;
     private Map<String, ProcessNode> processes;
     private boolean allNodesTerminated;
     private String rootID;
 
     public ProcessController()
     {
+    	roundCount = 1;
+    	
         processes = new LinkedHashMap<String, ProcessNode>(); //We want to quickly get to the process by using its id.
         allNodesTerminated = false;
     }
@@ -49,12 +50,14 @@ public class ProcessController
         while(this.isRoundComplete() ==false)
         {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(200);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        System.out.println("Round completed\n");
+        
+        System.out.println("Round " + roundCount + " completed\n");
+        roundCount++;
         return;
     }
 
@@ -74,58 +77,57 @@ public class ProcessController
             StringBuilder stringBuilder = new StringBuilder();
             String line;
 
-            //Used to prerve order of ids - will be used when reading connectivity matrix
+            //Used to preserve order of ids - will be used when reading connectivity matrix
             ArrayList<ProcessNode> orderedProcesses = null;
 
             while ((line = bufferedReader.readLine()) != null) {
+                if( line.length() != 0 && line.charAt(0) != '#') {
+                    if (stepCounter == 1) { //Our data structure don't need to know number of nodes - we skipping processing this line
+                        stepCounter++;
 
-                if( line.length() != 0 )
-                {
-                    if (!(line.charAt(0) == '#')) {
-                        if (stepCounter == 1)  //Our data structure don't need to know number of nodes - we skipping processing this line
-                            stepCounter++;
+                        //Processing number of nodes line
+                    }
+                    else if (stepCounter == 2) {
+                        //Used to prerve order of ids - will be used when reading connectivity matrix
+                        orderedProcesses = new ArrayList<ProcessNode>();
 
-                            //Processing number of nodes line
-                        else if (stepCounter == 2) {
-                            //Used to prerve order of ids - will be used when reading connectivity matrix
-                            orderedProcesses = new ArrayList<ProcessNode>();
-
-                            //Reading second line - getting ids of processes and storing them to the HashMap
-                            for (String id : line.split(" ")) {
-                                ProcessNode processNode = new ProcessNode(id);
-                                processes.put(id, processNode);
-                                orderedProcesses.add(processNode);
-                            }
-                            stepCounter++;
-                        } else if (stepCounter == 3) {
-                            //Reading thirdline line - getting id of root process
-                            rootID = line;
-                            processes.get(rootID).setRoot(true);
-                            processes.get(rootID).setDist(0);
-                            stepCounter++;
-                        } else if (stepCounter == 4) {
-			                /*
-			                * Reading connectivity matrix depending on matrix size, and adding neighbors to the thread
-			                * Each line is the current process we establishing links for, each column is the the other
-			                * processes in relation to current process.
-			                * */
-                            ProcessNode processNode = orderedProcesses.get(nodeCounter);
-                            String[] connectionWeights = line.split("\\s+");
-                            for (int i = 0; i < connectionWeights.length; i++) {
-                                if (Integer.parseInt(connectionWeights[i]) != -1) {
-                                    processNode.addNeighbor(
-                                            orderedProcesses.get(i).getId(),
-                                            Integer.parseInt(connectionWeights[i]),
-                                            orderedProcesses.get(i));
-                                }
-                            }
-
-                            nodeCounter++;
-
+                        //Reading second line - getting ids of processes and storing them to the HashMap
+                        for (String id : line.split(" ")) {
+                            ProcessNode processNode = new ProcessNode(id);
+                            processes.put(id, processNode);
+                            orderedProcesses.add(processNode);
                         }
+                        stepCounter++;
+                    } 
+                    else if (stepCounter == 3) {
+                        //Reading thirdline line - getting id of root process
+                        rootID = line;
+                        processes.get(rootID).setRoot(true);
+                        processes.get(rootID).setNeedsToSendMessages(true);
+                        processes.get(rootID).setNeedsToSendInitialSearch(true);
+                        processes.get(rootID).setDist(0);
+                        stepCounter++;
+                    } 
+                    else if (stepCounter == 4) {
+		                /*
+		                * Reading connectivity matrix depending on matrix size, and adding neighbors to the thread
+		                * Each line is the current process we establishing links for, each column is the the other
+		                * processes in relation to current process.
+		                * */
+                        ProcessNode processNode = orderedProcesses.get(nodeCounter);
+                        String[] connectionWeights = line.split("\\s+");
+                        for (int i = 0; i < connectionWeights.length; i++) {
+                            if (Integer.parseInt(connectionWeights[i]) != -1) {
+                                processNode.addNeighbor(
+                                        orderedProcesses.get(i).getId(),
+                                        Integer.parseInt(connectionWeights[i]),
+                                        orderedProcesses.get(i));
+                            }
+                        }
+
+                        nodeCounter++;
                     }
                 }
-
             }
             bufferedReader.close();
         }
@@ -162,6 +164,10 @@ public class ProcessController
     	}
     	return nodeParentPairs;
     }
+
+	public static int getRoundCount() {
+		return roundCount;
+	}
 
 	public boolean isAllNodesTerminated() {
         allNodesTerminated = true;

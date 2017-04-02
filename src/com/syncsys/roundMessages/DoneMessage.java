@@ -1,7 +1,6 @@
 package com.syncsys.roundMessages;
 
 import com.syncsys.ProcessNode;
-import com.syncsys.roundStrategies.BellmanFordStrategy;
 import com.syncsys.roundStrategies.RoundStrategy;
 
 public class DoneMessage implements RoundMessage {
@@ -11,9 +10,14 @@ public class DoneMessage implements RoundMessage {
 		setSenderID("-1");
 	}
 
+	//**************************************************************************************************//
+	//                                                                                                  //
+	//**************************************************************************************************//
+	
+	// Getters / Setters
+	
 	@Override
-    public void processUsing(RoundStrategy strategy) {
-		ProcessNode process = strategy.getProcess();
+    public void handleUsing(ProcessNode process) {
 		process.getDoneChildIDs().add(senderID);
     }
 

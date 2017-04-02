@@ -1,8 +1,6 @@
 package com.syncsys.roundMessages;
 
 import com.syncsys.ProcessNode;
-import com.syncsys.roundStrategies.BellmanFordStrategy;
-import com.syncsys.roundStrategies.RoundStrategy;
 
 public class TerminateMessage implements RoundMessage {
 	private String senderID;
@@ -12,13 +10,16 @@ public class TerminateMessage implements RoundMessage {
 	}
 
 	@Override
-    public void processUsing(RoundStrategy strategy) {
-		BellmanFordStrategy bfStrategy = (BellmanFordStrategy)strategy;
-		ProcessNode process = bfStrategy.getProcess();
-
+    public void handleUsing(ProcessNode process) {
 		process.setTerminating(true);
     }
-
+	
+	//**************************************************************************************************//
+	//                                                                                                  //
+	//**************************************************************************************************//
+	
+	// Getters / Setters
+	
 	public String getSenderID() {
 		return senderID;
 	}

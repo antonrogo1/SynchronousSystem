@@ -55,10 +55,20 @@ public class RunnableNode implements Runnable
         
         // Allow messages to only be processed at the start of the next round
         messagesToProcess.clear();
-        int numMessages = messages.size();
-		for (int i = 0; i < numMessages; i++) {
-			MessagePacket message = messages.take();
-			messagesToProcess.add(message);
+        MessagePacket[] messagesArray = messages.toArray(new MessagePacket[] {});
+        
+        // Get all messages that should be delivered this round
+		for (int i = 0; i < messagesArray.length; i++) {
+			MessagePacket message = messagesArray[i];
+			
+			int messageDelay = message.getDelay();
+			if (0 == messageDelay) {
+				messagesToProcess.add(message);
+				messages.remove(message);
+			}
+			else {
+				message.setDelay(messageDelay - 1);
+			}
 		}
     }
 

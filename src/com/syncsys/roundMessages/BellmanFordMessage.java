@@ -1,7 +1,6 @@
 package com.syncsys.roundMessages;
 
 import com.syncsys.ProcessNode;
-import com.syncsys.roundStrategies.BellmanFordStrategy;
 import com.syncsys.roundStrategies.RoundStrategy;
 
 public class BellmanFordMessage implements RoundMessage {
@@ -19,8 +18,7 @@ public class BellmanFordMessage implements RoundMessage {
 	}
 
 	@Override
-    public void processUsing(RoundStrategy strategy) {
-		ProcessNode process = strategy.getProcess();
+    public void handleUsing(ProcessNode process) {
 		process.getSearchIDs().add(senderID);
 
 		if(process.getWeights().get(senderID) == null)
@@ -32,6 +30,12 @@ public class BellmanFordMessage implements RoundMessage {
 			process.setParent(process.getNeighbors().get(senderID));
 		}
     }
+	
+	//**************************************************************************************************//
+	//                                                                                                  //
+	//**************************************************************************************************//
+	
+	// Getters / Setters
 
 	public String getSenderID() {
 		return senderID;
